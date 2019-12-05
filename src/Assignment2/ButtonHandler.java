@@ -23,5 +23,9 @@ public class ButtonHandler implements ActionListener {
             String name = ((PlayerWelcome)((JButton)e.getSource()).getParent()).playerName.getText();
             app.initChess(teamCol, opChoice, name);
         }
+        if(e.getSource() == app.getMenu().getNewGame())
+        {
+            app.initPlayerWelcome();
+        }
     }
 }

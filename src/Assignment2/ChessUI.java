@@ -9,18 +9,22 @@ public class ChessUI extends JFrame {
     Board chessBoard;
     JButton startGame;
     ButtonHandler buttonH;
+    private MenuBar menu;
 
     public ChessUI()
     {
-        System.out.println((new Coord(2,1)).equals((new Coord(1,1))));
         buttonH = new ButtonHandler(this);
         startGame = new JButton("I want to play a game...");
+        menu = new MenuBar(this);
+        setPreferredSize(new Dimension(800, 800));
         initPlayerWelcome();
+        setJMenuBar(menu);
     }
 
     void initChess(String teamCol, String op, String name)
     {
         getContentPane().removeAll();
+        setJMenuBar(menu);
         chessBoard = new Board(this, teamCol, op, name);
         JPanel board = new JPanel();
         board.setLayout(new GridLayout(8, 8));
@@ -38,9 +42,10 @@ public class ChessUI extends JFrame {
         repaint();
     }
 
-    private void initPlayerWelcome()
+    void initPlayerWelcome()
     {
         if (getContentPane() != null) getContentPane().removeAll();
+        setJMenuBar(menu);
         JPanel centre = new PlayerWelcome(this);
         add(centre, BorderLayout.CENTER);
         setSize(new Dimension(800, 800));
@@ -51,6 +56,10 @@ public class ChessUI extends JFrame {
     public static void main(String[] args) {
         ChessUI current = new ChessUI();
         current.repaint();
+    }
+
+    public MenuBar getMenu() {
+        return menu;
     }
 }
 

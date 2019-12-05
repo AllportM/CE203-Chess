@@ -11,6 +11,7 @@ public class Player {
     private String pName;
     private boolean checkStatus;
     private King king;
+    private boolean moving = false;
 
     Player(Team colour, Team player)
     {
@@ -22,6 +23,11 @@ public class Player {
     void addPiece(Piece piece)
     {
         playerPieces.add(piece);
+    }
+
+    void setMoving(boolean status)
+    {
+        moving = status;
     }
 
     void setType(Team type)
@@ -42,6 +48,11 @@ public class Player {
     void setCheckStatus()
     {
         checkStatus = true;
+    }
+
+    boolean isMoving()
+    {
+        return moving;
     }
 
     void clearCheckStatus() { checkStatus = false; }

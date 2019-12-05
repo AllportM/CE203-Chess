@@ -625,6 +625,7 @@ class King extends Piece
     {
         underThreat = false;
         attacker = null;
+
     }
 
     boolean isUnderThreat()

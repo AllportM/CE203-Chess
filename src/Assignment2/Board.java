@@ -10,6 +10,8 @@ public class Board {
     private ChessUI ui;
     private Player p1;
     private Player p2;
+    private Player playersTurn;
+    private Player opponent;
     private Team moveStatus;
     private Tile movingTile;
     private Piece movingPiece;
@@ -19,7 +21,7 @@ public class Board {
     private boolean p1CantCastle = false;
     private boolean p2CantCastle = false;
     private boolean gameOver = false;
-    private Team winner;
+    private Player winner;
 
     Board(ChessUI ui, String teamCol, String op, String name)
     {
@@ -28,12 +30,14 @@ public class Board {
             case "white":
                 p1 = new Player(WHITE, P1);
                 p2 = new Player(BLACK, P2);
-                moveStatus = P1TURN;
+                playersTurn = p1;
+                opponent = p2;
                 break;
             case "black":
                 p1 = new Player(BLACK, P1);
                 p2 = new Player(WHITE, P2);
-                moveStatus = P2TURN;
+                playersTurn = p2;
+                opponent = p1;
                 break;
         }
         if (op.equals("human")) p2.setType(HUMAN);
@@ -155,7 +159,7 @@ public class Board {
 
     void considerMove(Tile tile) {
         potentialMoves = new HashSet<>();
-        moveStatus = MOVING;
+        playersTurn.setMoving(true);
         movingTile = tile;
         movingPiece = tile.getTilePiece();
         int moveX = tile.getTileCoord().x;
@@ -163,7 +167,7 @@ public class Board {
         System.out.println(movingPiece + "\n + " + movingPiece.isProtector() + "\nKings threat is "
                 + ((movingPiece.teamPiece == P1)? p1.getKing().isUnderThreat(): p2.getKing().isUnderThreat()) + "\n");
         if (movingPiece instanceof King) {
-            potentialMoves = getKingsMoves(movingPiece.teamPiece);
+            potentialMoves = getKingsMoves(playersTurn);
         } else if (movingPiece.isProtector()) {
             potentialMoves = getProtectorsMoves(movingPiece);
         } else if (placesInCheck(movingPiece, ((movingPiece.teamPiece == P1)? getP1(): getP2()),
@@ -226,7 +230,7 @@ public class Board {
         if (tile.getTileCoord() == movingPiece.getPosition())
         {
             tile.setPiece(movingPiece);
-            moveStatus = (movingPiece.teamPiece == P1)? P1TURN: P2TURN;
+            playersTurn.setMoving(false);
             clearColouredTiles();
             return;
         }
@@ -330,52 +334,56 @@ public class Board {
             }
         }
 
-        // checks for end of game && resets king under threat and piece protector
-        switch (movingPiece.teamPiece)
+        // clears check status and protector status
+        if ((movingPiece instanceof  King || movingPiece.isProtector()) && playersTurn.getKing().isUnderThreat())
         {
-            case P2:
-                // sets win if checkmate
-                if (setWin(getP1())) return;
-                // clears check status and protector status
-                if (movingPiece instanceof  King || movingPiece.isProtector())
-                {
-                    getP2().getKing().clearUnderThreat();
-                }
-                break;
-            case P1:
-                // sets win if checkmate
-                if (setWin(getP2())) return;
-                if (movingPiece instanceof  King || movingPiece.isProtector())
-                {
-                    getP1().getKing().clearUnderThreat();
-                }
-                break;
+            playersTurn.getKing().clearUnderThreat();
+            for (Piece piece: playersTurn.getPlayerPieces())
+            {
+                piece.setProtector(false);
+            }
         }
 
-        // updates players move control variable
-        moveStatus = (movingPiece.teamPiece == P1)? P2TURN: P1TURN;
+        setWinDraw();
+        // Changes playersTurn to opponent, and resets moving status, clears tile colours
+        changePlayers();
         clearColouredTiles();
         ui.repaint();
     }
 
-    private boolean setWin(Player player) {
-        if (player.getKing().isUnderThreat())
+    private void changePlayers()
+    {
+        if (playersTurn.getPlayer() == P1)
         {
-            Team checkWin = isCheckMate(player);
-            if (checkWin != null)
+            playersTurn = p2;
+            opponent = p1;
+            p1.setMoving(false);
+        }
+        else
+        {
+            playersTurn = p1;
+            opponent = p2;
+            p2.setMoving(false);
+        }
+    }
+
+    private boolean setWinDraw() {
+        if (opponent.getKing().isUnderThreat())
+        {
+            boolean checkWin = isCheckMate();
+            if (checkWin)
             {
                 gameOver = true;
-                winner = checkWin;
+                winner = playersTurn;
                 return true;
             }
         }
-        else if (getKingsMoves(player.getPlayer()).size() == 0)
+        else if (getKingsMoves(opponent).size() == 0)
         {
             boolean noMoves = true;
-            for (Piece piece: player.getPlayerPieces())
+            for (Piece piece: playersTurn.getPlayerPieces())
             {
-                if (!placesInCheck(piece, ((player.getPlayer() == P1)? getP1(): getP2()),
-                        ((player.getPlayer() == P1)? getP2(): getP1())) && piece.getValidMoves(this).size() > 0)
+                if (!placesInCheck(piece, playersTurn, opponent) && piece.getValidMoves(this).size() > 0)
                 {
                     noMoves = false;
                 }
@@ -383,7 +391,7 @@ public class Board {
             if (noMoves)
             {
                 gameOver = true;
-                winner = STALEMATE;
+                winner = null;
                 return true;
             }
         }
@@ -400,79 +408,54 @@ public class Board {
         ui.repaint();
     }
 
-    private Team isCheckMate(Player player)
+    private boolean isCheckMate()
     {
         boolean gotProtector = false;
-        switch (player.getPlayer())
+        for (Piece piece: opponent.getPlayerPieces())
         {
-            case P2:
-                for (Piece piece: getP1().getPlayerPieces())
-                {
-                    Set<Coord> checkMoves = piece.getValidMoves(this);
-                    checkMoves.retainAll(p1.getKing().getValidMoves(this));
-                    checkMoves.retainAll(p1.getKing().getAttacker().getValidMoves(this));
-                    if (checkMoves.size() > 0)
-                    {
-                        piece.setProtector(true);
-                        gotProtector = true;
-                    }
-                    else piece.setProtector(false);
+            if (!(piece instanceof King))
+            {
+                Set<Coord> checkMoves = new HashSet<>();
+                Coord enemiesPosition = opponent.getKing().getAttacker().getPosition();
+                if (opponent.getKing().getValidMoves(this).contains(enemiesPosition)
+                        && piece.getValidMoves(this).contains(enemiesPosition))
+                    checkMoves.add(enemiesPosition);
+                else if (!opponent.getKing().getValidMoves(this).contains(enemiesPosition)) {
+                    checkMoves = piece.getValidMoves(this);
+                    checkMoves.retainAll(opponent.getKing().getValidMoves(this));
+                    checkMoves.retainAll(opponent.getKing().getAttacker().getValidMoves(this));
                 }
-                if (getKingsMoves(P1).size() == 0 && !gotProtector) return P2;
-                break;
-            case P1:
-                for (Piece piece: getP2().getPlayerPieces())
-                {
-                    Set<Coord> checkMoves = piece.getValidMoves(this);
-                    checkMoves.retainAll(p2.getKing().getValidMoves(this));
-                    checkMoves.retainAll(p2.getKing().getAttacker().getValidMoves(this));
-                    if (checkMoves.size() > 0)
-                    {
-                        piece.setProtector(true);
-                        gotProtector = true;
-                    }
-                    else piece.setProtector(false);
-                }
-                if (getKingsMoves(P1).size() == 0 && !gotProtector) return P1;
-                break;
+                if (checkMoves.size() > 0) {
+                    piece.setProtector(true);
+                    gotProtector = true;
+                } else piece.setProtector(false);
+            }
         }
-        return null;
+        if (getKingsMoves(opponent).size() == 0 && !gotProtector) return true;
+        return false;
     }
 
     private Set<Coord> getProtectorsMoves(Piece piece)
     {
         Set<Coord> moves = piece.getValidMoves(this);
-        switch (piece.teamPiece)
+        if (piece.getValidMoves(this).contains(playersTurn.getKing().getAttacker().getPosition()))
         {
-            case P1:
-                moves.retainAll(p1.getKing().getValidMoves(this));
-                moves.retainAll(p1.getKing().getAttacker().getValidMoves(this));
-                if (piece.getValidMoves(this).contains(getP1().getKing().getAttacker().getPosition()))
-                {
-                    moves.add(getP1().getKing().getAttacker().getPosition());
-                }
-                moves.addAll(getKingsMoves(P1));
-                return moves;
-            case P2:
-                moves.retainAll(p2.getKing().getValidMoves(this));
-                moves.retainAll(p2.getKing().getAttacker().getValidMoves(this));
-                if (piece.getValidMoves(this).contains(getP2().getKing().getAttacker().getPosition()))
-                {
-                    moves.add(getP2().getKing().getAttacker().getPosition());
-                }
-                return moves;
+            moves.add(playersTurn.getKing().getAttacker().getPosition());
+        }else {
+            moves.retainAll(playersTurn.getKing().getValidMoves(this));
+            moves.retainAll(playersTurn.getKing().getAttacker().getValidMoves(this));
         }
-        return null;
+        return moves;
     }
 
-    private Set<Coord> getKingsMoves(Team team)
+    private Set<Coord> getKingsMoves(Player player)
     {
         Set<Coord> moves = new HashSet<>();
-        switch (team)
+        switch (player.getPlayer())
         {
             case P1:
                 moves = getP1().getKing().getValidMoves(this);
-                for (Piece piece: getP2().getPlayerPieces())
+                for (Piece piece: opponent.getPlayerPieces())
                 {
                     moves.removeAll(piece.getValidMoves(this));
                 }
@@ -507,8 +490,9 @@ public class Board {
         }
         return false;
     }
-    Team getMoveStatus() {
-        return moveStatus;
+
+    Player getPlayersTurn() {
+        return playersTurn;
     }
 
     Player getP1() {
@@ -529,7 +513,7 @@ public class Board {
         return gameOver;
     }
 
-    Team getWinner()
+    Player getWinner()
     {
         return winner;
     }
