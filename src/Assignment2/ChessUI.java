@@ -58,6 +58,11 @@ public class ChessUI extends JFrame {
         current.repaint();
     }
 
+    public void setChessBoard(Board b)
+    {
+        chessBoard = b;
+    }
+
     public MenuBar getMenu() {
         return menu;
     }
@@ -159,6 +164,11 @@ class Tile extends JPanel {
     {
         background.renderShape(g);
         if (tilePiece != null) tilePiece.drawing.renderShape(g);
+    }
+
+    public String toString()
+    {
+        return "I am a Tile, my piece is:- \n" + getTilePiece() +"\nMy posittion is:- \n" + getTileCoord();
     }
 }
 
@@ -264,4 +274,5 @@ class PlayerWelcome extends JPanel {
         }
         return null;
     }
+
 }

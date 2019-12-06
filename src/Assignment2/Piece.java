@@ -32,6 +32,15 @@ abstract class Piece
         drawing = setDrawing();
     }
 
+    // copy constructor
+    Piece(Piece piece)
+    {
+        position = new Coord(piece.getPosition().x, piece.getPosition().y);
+        teamPiece = piece.teamPiece;
+        drawing = piece.drawing;
+        col = piece.col;
+    }
+
     abstract Set<Coord> getValidMoves(Board board);
     /*
      * setDrawing's purpose is to compile an assortment of Shapes and add them to the ComplexShape group to be drawn
@@ -101,6 +110,11 @@ class Pawn extends Piece
     Pawn (Coord place, Team team, Team teamCol)
     {
         super(place, team, teamCol);
+    }
+
+    Pawn(Piece piece)
+    {
+        super(piece);
     }
 
     @Override
@@ -189,6 +203,11 @@ class Castle extends Piece
     Castle (Coord place, Team team, Team teamCol)
     {
         super(place, team, teamCol);
+    }
+
+    Castle(Piece piece)
+    {
+        super(piece);
     }
 
     /*
@@ -294,6 +313,11 @@ class Horse extends Piece
         super(place, team, teamCol);
     }
 
+    Horse(Piece piece)
+    {
+        super(piece);
+    }
+
     public Shape setDrawing()
     {
         ComplexShape cp = new ComplexShape();
@@ -362,6 +386,11 @@ class Bishop extends Piece
     Bishop (Coord place, Team team, Team teamCol)
     {
         super(place, team, teamCol);
+    }
+
+    Bishop(Piece piece)
+    {
+        super(piece);
     }
 
     /*
@@ -445,6 +474,11 @@ class Queen extends Piece
     Queen (Coord place, Team team, Team teamCol)
     {
         super(place, team, teamCol);
+    }
+
+    Queen (Piece piece)
+    {
+        super(piece);
     }
 
     /*
@@ -542,6 +576,14 @@ class King extends Piece
     {
         super(place, team, teamCol);
         underThreat = false;
+    }
+
+    King(Piece piece)
+    {
+        super(piece);
+        underThreat = ((King) piece).isUnderThreat();
+        attacker = ((King) piece).getAttacker(); // given attacker is only ever used for coordinate reference
+        // no copy needed
     }
 
     /*

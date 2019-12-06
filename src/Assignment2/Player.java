@@ -9,15 +9,39 @@ public class Player {
     private Team player;
     private Team playerType;
     private String pName;
-    private boolean checkStatus;
     private King king;
     private boolean moving = false;
+    private AIPlayer aiPlayer;
 
     Player(Team colour, Team player)
     {
         this.colour = colour;
         this.player = player; // P1 or P2
         playerPieces = new ArrayList<>();
+    }
+
+    Player(Player player)
+    {
+        playerPieces = new ArrayList<>();
+        colour = player.colour;
+        playerType = player.getPlayerType();
+        pName = player.getpName();
+        moving = isMoving();
+        this.player = player.getPlayer();
+        for (Piece piece: player.getPlayerPieces())
+        {
+            if (piece instanceof Pawn) playerPieces.add(new Pawn(piece));
+            if (piece instanceof Bishop) playerPieces.add(new Bishop(piece));
+            if (piece instanceof Castle) playerPieces.add(new Castle(piece));
+            if (piece instanceof Horse) playerPieces.add(new Horse(piece));
+            if (piece instanceof Queen) playerPieces.add(new Queen(piece));
+            if (piece instanceof King)
+            {
+                King king = new King(piece);
+                playerPieces.add(king);
+                this.king = king;
+            }
+        }
     }
 
     void addPiece(Piece piece)
@@ -45,21 +69,9 @@ public class Player {
         pName = name;
     }
 
-    void setCheckStatus()
-    {
-        checkStatus = true;
-    }
-
     boolean isMoving()
     {
         return moving;
-    }
-
-    void clearCheckStatus() { checkStatus = false; }
-
-    boolean getCheckStatus()
-    {
-        return checkStatus;
     }
 
     void removePiece(Piece piece)
@@ -70,6 +82,11 @@ public class Player {
     Team getPlayerType()
     {
         return playerType;
+    }
+
+    String getpName()
+    {
+        return pName;
     }
 
     void setKing(King king)
@@ -90,6 +107,14 @@ public class Player {
     Team getPlayer()
     {
         return player;
+    }
+
+    public AIPlayer getAiPlayer() {
+        return aiPlayer;
+    }
+
+    public void setAiPlayer(AIPlayer aiPlayer) {
+        this.aiPlayer = aiPlayer;
     }
 
     @Override

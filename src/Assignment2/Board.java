@@ -7,12 +7,12 @@ import static Assignment2.Team.*;
 
 public class Board {
     Tile[][] board = new Tile[8][8];
+    public final static int DIFFICULTY = 2;
     private ChessUI ui;
     private Player p1;
     private Player p2;
     private Player playersTurn;
     private Player opponent;
-    private Team moveStatus;
     private Tile movingTile;
     private Piece movingPiece;
     private Set<Coord> potentialMoves;
@@ -22,6 +22,7 @@ public class Board {
     private boolean p2CantCastle = false;
     private boolean gameOver = false;
     private Player winner;
+    private boolean AIEval;
 
     Board(ChessUI ui, String teamCol, String op, String name)
     {
@@ -41,7 +42,11 @@ public class Board {
                 break;
         }
         if (op.equals("human")) p2.setType(HUMAN);
-        else p2.setType(AI);
+        else
+        {
+            p2.setType(AI);
+            p2.setAiPlayer(new AIPlayer(ui));
+        }
         p1.setType(HUMAN);
         p1.setName(name);
         p2.setName("Player 2");
@@ -58,17 +63,59 @@ public class Board {
         }
 
         initPlayerPieces();
-        Queen test1 = new Queen(new Coord(3,3), P2, p2.colour);
-        p2.addPiece(test1);
-        board[3][3].setPiece(test1);
+//        Queen test1 = new Queen(new Coord(3,3), P2, p2.colour);
+//        p2.addPiece(test1);
+//        board[3][3].setPiece(test1);
+//        Board testboard = new Board(this);
+//        System.out.println(testboard.getPlayersTurn());
     }
 
-    protected boolean isOccupied(int x, int y)
+    // Copy constructor
+    Board(Board board)
+    {
+        this.board = new Tile[8][8];
+        p1 = new Player(board.getP1());
+        p2 = new Player(board.getP2());
+        if (board.getPlayersTurn().getPlayer() == P1)
+        {
+            playersTurn = p1;
+            opponent = p2;
+        }
+        else
+        {
+            playersTurn = p2;
+            opponent = p1;
+        }
+        p1CantCastle = board.p1CantCastle;
+        p2CantCastle = board.p2CantCastle;
+        gameOver = board.gameOver;
+        winner = board.winner;
+        TileHandler th = new TileHandler(this);
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                Tile tile = new Tile(new Coord(j, i));
+                tile.addMouseListener(th);
+                this.board[i][j] = tile;
+            }
+        }
+        for (Piece piece: p1.getPlayerPieces())
+        {
+            this.board[piece.position.y][piece.position.x].setPiece(piece);
+        }
+        for (Piece piece: p2.getPlayerPieces())
+        {
+            this.board[piece.position.y][piece.position.x].setPiece(piece);
+        }
+    }
+
+    boolean isOccupied(int x, int y)
     {
         return (board[y][x].isOccupied());
     }
 
-    protected Tile getTile(int x, int y)
+    Tile getTile(int x, int y)
     {
         return board[y][x];
     }
@@ -155,6 +202,38 @@ public class Board {
                 }
             }
         }
+
+        //        // test stalemate move white move first
+//        King king = new King(new Coord(1, 2), p1.getPlayer(), WHITE);
+//        board[2][1].setPiece(king);
+//        p1.addPiece(king);
+//        p1.setKing(king);
+//        Castle castle = new Castle(new Coord(3, 2), p1.getPlayer(), WHITE);
+//        board[2][3].setPiece(castle);
+//        p1.addPiece(castle);
+//        Queen queen = new Queen(new Coord(5, 4), p1.getPlayer(), WHITE);
+//        p1.addPiece(queen);
+//        board[4][5].setPiece(queen);
+//        King kingB = new King(new Coord(0,0), p2.getPlayer(), BLACK);
+//        p2.addPiece(kingB);
+//        p2.setKing(kingB);
+//        board[0][0].setPiece(kingB);
+
+//        // test stalemate black move
+//        King king = new King(new Coord(1, 2), p2.getPlayer(), WHITE);
+//        board[2][1].setPiece(king);
+//        p2.addPiece(king);
+//        p2.setKing(king);
+//        Castle castle = new Castle(new Coord(3, 1), p2.getPlayer(), WHITE);
+//        board[1][2].setPiece(castle);
+//        p2.addPiece(castle);
+//        Queen queen = new Queen(new Coord(5, 4), p2.getPlayer(), WHITE);
+//        p2.addPiece(queen);
+//        board[4][5].setPiece(queen);
+//        King kingB = new King(new Coord(0,0), p1.getPlayer(), BLACK);
+//        p1.addPiece(kingB);
+//        p1.setKing(kingB);
+//        board[0][1].setPiece(kingB);
     }
 
     void considerMove(Tile tile) {
@@ -164,8 +243,6 @@ public class Board {
         movingPiece = tile.getTilePiece();
         int moveX = tile.getTileCoord().x;
         int moveY = tile.getTileCoord().y;
-        System.out.println(movingPiece + "\n + " + movingPiece.isProtector() + "\nKings threat is "
-                + ((movingPiece.teamPiece == P1)? p1.getKing().isUnderThreat(): p2.getKing().isUnderThreat()) + "\n");
         if (movingPiece instanceof King) {
             potentialMoves = getKingsMoves(playersTurn);
         } else if (movingPiece.isProtector()) {
@@ -220,12 +297,17 @@ public class Board {
                 potentialMove.setColourHostile();
             else getTile(move.x, move.y).setColourMoving();
         }
-        tile.clearPiece();
-        ui.repaint();
+        if (!AIEval)
+        {
+            System.out.println("hey");
+            ui.repaint();
+            tile.clearPiece();
+        }
     }
 
     void makeMove(Tile tile)
     {
+        if (AIEval) movingTile.clearPiece();
         // if player replaces piece to where it came from, just replaces it
         if (tile.getTileCoord() == movingPiece.getPosition())
         {
@@ -347,8 +429,7 @@ public class Board {
         setWinDraw();
         // Changes playersTurn to opponent, and resets moving status, clears tile colours
         changePlayers();
-        clearColouredTiles();
-        ui.repaint();
+        if (!AIEval) clearColouredTiles();
     }
 
     private void changePlayers()
@@ -381,9 +462,10 @@ public class Board {
         else if (getKingsMoves(opponent).size() == 0)
         {
             boolean noMoves = true;
-            for (Piece piece: playersTurn.getPlayerPieces())
+            for (Piece piece: opponent.getPlayerPieces())
             {
-                if (!placesInCheck(piece, playersTurn, opponent) && piece.getValidMoves(this).size() > 0)
+                if (!(piece instanceof King) && !placesInCheck(piece, opponent, playersTurn)
+                        && piece.getValidMoves(this).size() > 0)
                 {
                     noMoves = false;
                 }
@@ -405,7 +487,6 @@ public class Board {
             getTile(reset.x, reset.y).setColourDefault();
         }
         movingTile.setColourDefault();
-        ui.repaint();
     }
 
     private boolean isCheckMate()
@@ -431,8 +512,7 @@ public class Board {
                 } else piece.setProtector(false);
             }
         }
-        if (getKingsMoves(opponent).size() == 0 && !gotProtector) return true;
-        return false;
+        return (getKingsMoves(opponent).size() == 0 && !gotProtector);
     }
 
     private Set<Coord> getProtectorsMoves(Piece piece)
@@ -489,6 +569,15 @@ public class Board {
             if (kingInCheck) return true;
         }
         return false;
+    }
+
+    public void setAIEval()
+    {
+        AIEval = true;
+    }
+
+    public ChessUI getUi() {
+        return ui;
     }
 
     Player getPlayersTurn() {

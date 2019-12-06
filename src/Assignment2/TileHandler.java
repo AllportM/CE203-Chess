@@ -85,11 +85,20 @@ public class TileHandler implements MouseListener {
         if (!player.isMoving() && tileClicked.isOccupied() && player.hasPiece(tileClicked.getTilePiece()))
         {
             board.considerMove(tileClicked);
+            board.getUi().repaint();
             tileClicked.setColourMoving();
         }
         else
         {
             board.makeMove(tileClicked);
+            board.getUi().repaint();
+            if (board.getPlayersTurn().getPlayerType() == AI)
+            {
+                board.getP2().getAiPlayer().callMiniMax(board);
+                PointsAndMoves move = board.getP2().getAiPlayer().getBestMove();
+                board.considerMove(board.getTile(move.getOrigin().x, move.getOrigin().y));
+                board.makeMove(board.getTile(move.getDestination().x, move.getDestination().y));
+            }
         }
     }
 }
