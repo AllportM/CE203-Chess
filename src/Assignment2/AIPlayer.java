@@ -147,12 +147,30 @@ class AIPlayer {
 
     private int pieceScore(Piece piece)
     {
-        if (piece instanceof Pawn) return 100;
-        if (piece instanceof Bishop) return 330;
-        if (piece instanceof Castle) return 500;
-        if (piece instanceof Horse) return 320;
-        if (piece instanceof Queen) return 900;
-        if (piece instanceof King) return 2000;
+        if (piece instanceof Pawn)
+        {
+            return 100;
+        }
+        if (piece instanceof Bishop)
+        {
+            return 330;
+        }
+        if (piece instanceof Castle)
+        {
+            return 500;
+        }
+        if (piece instanceof Horse)
+        {
+            return 320;
+        }
+        if (piece instanceof Queen)
+        {
+            return 900;
+        }
+        if (piece instanceof King)
+        {
+            return 2000;
+        }
         else return 0;
     }
 }
