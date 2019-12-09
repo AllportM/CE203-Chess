@@ -15,7 +15,8 @@ abstract class Piece
     final Team teamPiece; // the team the piece belongs to, indicative of what player, P1 or P2
     final Shape drawing; // an assortment of graphic drawings for specific pieces, used in paintComponents
     Color col; // WHITE or BLACK, the colour the piece is
-    private boolean protector = false;
+    boolean firstMove;
+    String stringCol;
 
     /*
      * Default constructor, initiates coordinates and team
@@ -28,8 +29,18 @@ abstract class Piece
     {
         position = place;
         teamPiece = team;
-        col = (teamCol == WHITE)? Color.white: Color.black;
+        if (teamCol == WHITE)
+        {
+            col = Color.white;
+            stringCol = "WHITE";
+        }
+        else
+        {
+            col = Color.black;
+            stringCol = "BLACK";
+        }
         drawing = setDrawing();
+        firstMove = true;
     }
 
     // copy constructor
@@ -39,6 +50,8 @@ abstract class Piece
         teamPiece = piece.teamPiece;
         drawing = piece.drawing;
         col = piece.col;
+        stringCol = piece.stringCol;
+        firstMove = piece.firstMove;
     }
 
     abstract Set<Coord> getValidMoves(Board board);
@@ -75,22 +88,38 @@ abstract class Piece
      */
     void setCoord(Coord place)
     {
-        position = place;
+        position = new Coord(place.x, place.y);
     }
 
-    void setProtector(boolean huh)
-    {
-        protector = huh;
-    }
-
-    boolean isProtector()
-    {
-        return protector;
-    }
 
     Coord getPosition()
     {
         return position;
+    }
+
+    boolean isFirstMove()
+    {
+        return firstMove;
+    }
+
+    void setFirstMove()
+    {
+        firstMove = false;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (!(o instanceof Piece)) return false;
+        Piece piece =  (Piece) o;
+        if (piece.getPosition().equals(this.getPosition()) && piece.col == this.col) return true;
+        return false;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return (position.hashCode() + col.hashCode());
     }
 
     // will be overriding toString for debugging purposes
@@ -103,7 +132,6 @@ abstract class Piece
  */
 class Pawn extends Piece
 {
-    private boolean firstMove = true;
     /*
      * Default constructor, calling super's
      */
@@ -112,7 +140,7 @@ class Pawn extends Piece
         super(place, team, teamCol);
     }
 
-    Pawn(Piece piece)
+    Pawn(Pawn piece)
     {
         super(piece);
     }
@@ -176,27 +204,16 @@ class Pawn extends Piece
         return cp;
     }
 
-    boolean isFirstMove()
-    {
-        return firstMove;
-    }
-
-    void setFirstMove()
-    {
-        firstMove = false;
-    }
-
     // Overriding to string for debugging purposes
     @Override
     public String toString()
     {
-        return "I am a Pawn, my team is " + teamPiece + " and my position is " + position;
+        return "P" + stringCol;
     }
 }
 
 class Castle extends Piece
 {
-    boolean firstMove = true;
     /*
      * Default constructor, calling super's
      */
@@ -205,9 +222,10 @@ class Castle extends Piece
         super(place, team, teamCol);
     }
 
-    Castle(Piece piece)
+    Castle(Castle piece)
     {
         super(piece);
+        firstMove = piece.firstMove;
     }
 
     /*
@@ -289,20 +307,10 @@ class Castle extends Piece
         }
     }
 
-    boolean isFirstMove()
-    {
-        return firstMove;
-    }
-
-    void setFirstMove()
-    {
-        firstMove = false;
-    }
-
     @Override
     public String toString()
     {
-        return "I am a Castle, my team is " + teamPiece + " and my position is " + position;
+        return "C" + stringCol;
     }
 }
 
@@ -377,7 +385,7 @@ class Horse extends Piece
 
     @Override
     public String toString() {
-        return "I am a Horse, my team is " + teamPiece + " and my position is " + position;
+        return "H" + stringCol;
     }
 }
 
@@ -433,7 +441,7 @@ class Bishop extends Piece
 
     @Override
     public String toString() {
-        return "I am a Bishop, my team is " + teamPiece + " and my position is " + position;
+        return "B" + stringCol;
     }
 
     private void setMoves(Set<Coord> moves, Board board, int x, int y, int xDir, int yDir)
@@ -561,16 +569,15 @@ class Queen extends Piece
 
     @Override
     public String toString() {
-        return "I am a Queen, my team is " + teamPiece + " and my position is " + position;
+        return "Q" + stringCol;
     }
 }
 
 class King extends Piece
 {
 
-    boolean firstMove = true;
-    boolean underThreat;
-    Piece attacker;
+    private boolean underThreat;
+    private Piece attacker;
 
     King (Coord place, Team team, Team teamCol)
     {
@@ -578,12 +585,10 @@ class King extends Piece
         underThreat = false;
     }
 
-    King(Piece piece)
+    King(King piece)
     {
         super(piece);
-        underThreat = ((King) piece).isUnderThreat();
-        attacker = ((King) piece).getAttacker(); // given attacker is only ever used for coordinate reference
-        // no copy needed
+        underThreat = piece.underThreat;
     }
 
     /*
@@ -620,10 +625,10 @@ class King extends Piece
         //forward right
         x = position.x + 1;
         setMove(moves, board, x, y);
-        //backward left
+        //backward right
         y = position.y - 1;
         setMove(moves, board, x, y);
-        //backward right
+        //backward left
         x = position.x - 1;
         setMove(moves, board, x, y);
         //backward
@@ -641,21 +646,11 @@ class King extends Piece
 
     private void setMove(Set<Coord> moves, Board board, int x, int y)
     {
-        if (validMove(board, x, y)
-                && ((board.isOccupied(x, y) && board.getTile(x, y).getTilePiece().teamPiece != teamPiece)
-                || !board.isOccupied(x, y)))
+        if (validMove(board, x, y) && (!board.isOccupied(x, y)
+                || board.getTile(x, y).getTilePiece().teamPiece != teamPiece))
             moves.add(new Coord(x, y));
     }
 
-    boolean isFirstMove()
-    {
-        return firstMove;
-    }
-
-    void setFirstMove()
-    {
-        firstMove = false;
-    }
 
     void setUnderThreat(Piece attacker)
     {
@@ -663,12 +658,6 @@ class King extends Piece
         this.attacker = attacker;
     }
 
-    void clearUnderThreat()
-    {
-        underThreat = false;
-        attacker = null;
-
-    }
 
     boolean isUnderThreat()
     {
@@ -680,13 +669,8 @@ class King extends Piece
         return attacker;
     }
 
-    void setAttacker(Piece piece)
-    {
-        attacker = piece;
-    }
-
     @Override
     public String toString() {
-        return "I am a King, my team is " + teamPiece + " and my position is " + position;
+        return "K" + stringCol;
     }
 }

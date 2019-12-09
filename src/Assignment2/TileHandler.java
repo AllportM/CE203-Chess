@@ -1,5 +1,6 @@
 package Assignment2;
 
+import javax.swing.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
@@ -7,6 +8,8 @@ import static Assignment2.Team.*;
 public class TileHandler implements MouseListener {
     Board board;
     boolean shortClick = false;
+    boolean entered = false;
+    Piece movinePiece;
 
     TileHandler(Board board)
     {
@@ -18,31 +21,23 @@ public class TileHandler implements MouseListener {
     {
         Player player = board.getPlayersTurn();
         Tile tileEntered = ((Tile)e.getComponent());
-        if (!player.isMoving())
+        if (!player.isMoving() && player.isHuman() && tileEntered.isOccupied()
+                && ((HumanPlayer) player).hasPiece(tileEntered)
+                && player.getPieceMoves(tileEntered.getTilePiece()).size() > 0)
         {
-            if (tileEntered.isOccupied() && player.hasPiece(tileEntered.getTilePiece())
-                    && !player.getKing().isUnderThreat()) {
-                tileEntered.setColourMovePiece();
-                tileEntered.repaint();
-            } else if (tileEntered.isOccupied() && player.hasPiece(tileEntered.getTilePiece())
-                    && player.getKing().isUnderThreat()
-                    && (tileEntered.getTilePiece() == player.getKing() || tileEntered.getTilePiece().isProtector())) {
-                tileEntered.setColourMovePiece();
-                tileEntered.repaint();
-            }
+            tileEntered.setColourMovePiece();
+            board.getUi().repaint();
         }
     }
 
     @Override
     public void mouseExited(MouseEvent e) {
-        Player player = board.getPlayersTurn();
         Tile tileExited = ((Tile)e.getComponent());
-        if (!player.isMoving() && tileExited.getToPaint() != tileExited.getDefaultCol())
+        if (!board.getPlayersTurn().isMoving())
         {
             tileExited.setColourDefault();
-            tileExited.repaint();
+            board.getUi().repaint();
         }
-
     }
 
     @Override
@@ -58,47 +53,45 @@ public class TileHandler implements MouseListener {
     public void mousePressed(MouseEvent e) {
         if (!shortClick)
         {
-            System.out.println("shortClick");
             shortClick = true;
         }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        if (shortClick)
+        Player pTurn = board.getPlayersTurn();
+        Tile tileClicked = ((Tile)e.getComponent());
+        if (shortClick && pTurn.isHuman())
         {
-            System.out.println("ClickSent");
-            sendClick(e);
-            shortClick = !shortClick;
+            // makes move if human
+            if (pTurn.isMoving() && (pTurn.getPieceMoves(board.getMovingPiece()).contains(tileClicked.getTileCoord())
+                    || tileClicked.getTileCoord().equals(board.getMovingTile().getTileCoord())))
+            {
+                pTurn.makeMove(tileClicked);
+                board.getUi().repaint();
+                // ai makes move if its turn
+                if (board.getP2().getPlayerType() == AI && board.getPlayersTurn().getTeam() == P2)
+                {
+                    board.getP2().makeMove(tileClicked);
+                    board.getUi().repaint();
+                    board.getUi().revalidate();
+                }
+            }
+            // considers move if human
+            else if (!pTurn.isMoving() && tileClicked.isOccupied() && ((HumanPlayer) pTurn).hasPiece(tileClicked)
+                && pTurn.getPieceMoves(tileClicked.getTilePiece()).size() > 0)
+
+            {
+                ((HumanPlayer) pTurn).considerMove(tileClicked);
+
+            }
         }
         if (board.isGameOver())
         {
             System.out.println("Congratulations " + ((board.getWinner() == board.getP1()? "Player 1":
                     board.getWinner() == board.getP2()? "Player 2":", you reached a StaleMate")));
         }
+        shortClick = false;
     }
 
-    private void sendClick(MouseEvent e)
-    {
-        Player player = board.getPlayersTurn();
-        Tile tileClicked = ((Tile)e.getComponent());
-        if (!player.isMoving() && tileClicked.isOccupied() && player.hasPiece(tileClicked.getTilePiece()))
-        {
-            board.considerMove(tileClicked);
-            board.getUi().repaint();
-            tileClicked.setColourMoving();
-        }
-        else
-        {
-            board.makeMove(tileClicked);
-            board.getUi().repaint();
-            if (board.getPlayersTurn().getPlayerType() == AI)
-            {
-                board.getP2().getAiPlayer().callMiniMax(board);
-                PointsAndMoves move = board.getP2().getAiPlayer().getBestMove();
-                board.considerMove(board.getTile(move.getOrigin().x, move.getOrigin().y));
-                board.makeMove(board.getTile(move.getDestination().x, move.getDestination().y));
-            }
-        }
-    }
 }

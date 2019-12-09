@@ -27,5 +27,9 @@ public class ButtonHandler implements ActionListener {
         {
             app.initPlayerWelcome();
         }
+        if (e.getSource() == app.getMenu().getRevert() && app.chessBoard.getPreviousMoves().size() > 0)
+        {
+            app.chessBoard.revertMove();
+        }
     }
 }

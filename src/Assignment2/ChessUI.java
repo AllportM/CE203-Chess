@@ -2,6 +2,9 @@ package Assignment2;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.LinkedList;
 
 import static Assignment2.Team.P1;
 
@@ -20,6 +23,7 @@ public class ChessUI extends JFrame {
         initPlayerWelcome();
         setJMenuBar(menu);
     }
+
 
     void initChess(String teamCol, String op, String name)
     {
@@ -80,6 +84,15 @@ class Tile extends JPanel {
     private final int width = 100;
     private final int height = 100;
 
+    Tile(Tile tile)
+    {
+        tilePiece = tile.tilePiece;
+        defaultCol = tile.defaultCol;
+        tileCoord = tile.tileCoord;
+        toPaint = tile.toPaint;
+        background = tile.background;
+    }
+
     Tile(Coord tilePlace)
     {
         tileCoord = tilePlace;
@@ -126,7 +139,6 @@ class Tile extends JPanel {
     {
         if (this.isOccupied()) clearPiece();
         tilePiece = piece;
-        piece.setCoord(tileCoord);
     }
 
     Color getToPaint()

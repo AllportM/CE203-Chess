@@ -41,4 +41,11 @@ class PointsAndMoves implements Comparable<PointsAndMoves>{
                 + ((Integer) score).hashCode();
     }
 
+    @Override
+    public String toString()
+    {
+        return "PointsAndScores\nMy origin is:- " + origin.x + ", " + origin.y
+                + "\nMy Destination is:- " + destination.x + ", " + destination.y;
+    }
+
 }
