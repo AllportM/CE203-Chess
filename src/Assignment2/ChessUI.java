@@ -4,7 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
 
 import static Assignment2.Team.P1;
 
@@ -16,6 +18,11 @@ public class ChessUI extends JFrame {
 
     public ChessUI()
     {
+        Set<Coord> test = new HashSet<>();
+        test.add(new Coord(1, 0));
+        test.add(new Coord(2, 0));
+        test.add(new Coord(3, 0));
+        System.out.println(test.contains(new Coord(6, 1)));
         buttonH = new ButtonHandler(this);
         startGame = new JButton("I want to play a game...");
         menu = new MenuBar(this);

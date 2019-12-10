@@ -12,8 +12,9 @@ public class Board {
     private Player p2;
     Player playersTurn;
     Player opponent;
-    private Set<Coord> potentialMoves;
-    private LinkedList<Board> previousMoves = new LinkedList<>();
+    private HashSet<Coord> movingPiecesMoves;
+    private HashSet<Coord> playersMoves;
+    private LinkedList<Board> previousBoardStates = new LinkedList<>();
     private Tile movingTile;
     private Piece movingPiece;
     private boolean gameOver = false;
@@ -23,7 +24,7 @@ public class Board {
 
     Board(ChessUI ui, String teamCol, String op, String name)
     {
-        potentialMoves = new HashSet<>();
+        movingPiecesMoves = new HashSet<>();
         TileHandler th = new TileHandler(this);
         for (int i = 0; i < 8; i++)
         {
@@ -54,6 +55,8 @@ public class Board {
         p1.setName(name);
         p2.setName("Player 2");
         this.ui = ui;
+        playersMoves = new HashSet<>();
+        generatePlayersMoves();
 
 //        Queen test1 = new Queen(new Coord(3,3), P2, p2.colour);
 //        p2.addPiece(test1);
@@ -113,10 +116,10 @@ public class Board {
     // Copy constructor
     Board(Board board)
     {
-        previousMoves = new LinkedList<>();
-        for (int i = board.previousMoves.size()-1; i != -1; i--)
+        previousBoardStates = new LinkedList<>();
+        for (int i = board.previousBoardStates.size()-1; i != -1; i--)
         {
-            previousMoves.push(board.previousMoves.get(i));
+            previousBoardStates.push(board.previousBoardStates.get(i));
         }
         ui = board.ui;
         gameOver = board.gameOver;
@@ -149,21 +152,17 @@ public class Board {
 
     void considerMove(Coord origin)
     {
-//        System.out.println("Suspicous tile considering " + getTile(4, 7) + "\n");
         //saves move for reverting
         playersTurn.setMoving(true);
         movingTile = getTile(origin);
         movingPiece = movingTile.getTilePiece();
-//        System.out.println("player clicked is:- \n" + playersTurn);
-//        System.out.println(getTile(origin).getTilePiece().isProtector());
-//        System.out.println(movingTile);
-        potentialMoves = playersTurn.getPieceMoves(movingPiece);
-        if (!AIEval && !AIMakingMove && !playersTurn.getKing().isUnderThreat()) potentialMoves.add(origin);
+        movingPiecesMoves = playersTurn.getPieceMoves(movingPiece);
+        if (!AIEval && !AIMakingMove && !playersTurn.getKing().isUnderThreat()) movingPiecesMoves.add(origin);
 
         // sets tile colours
         if (!((AIEval || AIMakingMove)))
         {
-            for (Coord move : potentialMoves)
+            for (Coord move : movingPiecesMoves)
             {
                 Tile potentialMove = getTile(move);
                 if (potentialMove.isOccupied() && playersTurn.getTeam() != potentialMove.getTilePiece().teamPiece
@@ -193,18 +192,15 @@ public class Board {
             ui.repaint();
             return;
         }
+        if (!AIEval && !AIMakingMove) {
+            clearColouredTiles();
+        }
 
         // adds copy board to previous moves for move reverting (mainly used for ai/debugging)
-        previousMoves.push(new Board(this));
+        previousBoardStates.push(new Board(this));
 
         playersTurn.movePiece(movingPiece, movingPiece.getPosition(), destination);
-//        System.out.println("MOVED " + getTile(4, 7));
-
-        if (!AIMakingMove) clearColouredTiles();
-
-        movingPiece = null;
-        movingTile = null;
-        potentialMoves = new HashSet<>();
+        movingPiecesMoves = new HashSet<>();
 
 //        System.out.println("MOVED " + getTile(4, 7));
 
@@ -217,10 +213,15 @@ public class Board {
             opponent = p2;
         }
 
+        // generates all possible moves
+        movingPiecesMoves = new HashSet<>();
+        playersMoves = new HashSet<>();
+        generatePlayersMoves();
+
 //        System.out.println("MOVED " + getTile(4, 7));
 
         // win check
-        if (playersTurn.outOfMoves()) {
+        if (playersMoves.size() == 0) {
             if (playersTurn.king.isUnderThreat()) {
                 gameOver = true;
                 winner = opponent;
@@ -233,9 +234,7 @@ public class Board {
 
 //        System.out.println("MOVED " + getTile(4, 7));
 
-        if (!AIEval && !AIMakingMove) {
-            ui.repaint();
-        }
+
 
 
 //        System.out.println("MOVED " + getTile(4, 7));
@@ -243,14 +242,22 @@ public class Board {
 //        System.out.println("player clicked is:- \n" + playersTurn);
     }
 
+    private void generatePlayersMoves()
+    {
+        for (Piece piece: playersTurn.getPlayerPieces())
+        {
+            if (playersTurn.getPieceMoves(piece).size() > 0) playersMoves.add(piece.getPosition());
+        }
+    }
+
     public void takeMove(Board previous)
     {
 //        System.out.println("hey");
 //        System.out.println(previous.previousMoves.size());
-        previousMoves = new LinkedList<>();
-        for (int i = previous.getPreviousMoves().size()-1; i != -1; i--)
+        previousBoardStates = new LinkedList<>();
+        for (int i = previous.getPreviousBoardStates().size()-1; i != -1; i--)
         {
-            previousMoves.push(previous.getPreviousMoves().get(i));
+            previousBoardStates.push(previous.getPreviousBoardStates().get(i));
         }
         for (int i = 0; i < board.length; i++)
         {
@@ -280,7 +287,7 @@ public class Board {
     public void revertMove()
     {
 //        System.out.println(previousMoves.size());
-        Board previous = previousMoves.pop();
+        Board previous = previousBoardStates.pop();
         for (int i = 0; i < board.length; i++)
         {
             for (int j = 0; j < board[i].length; j++)
@@ -308,9 +315,9 @@ public class Board {
     }
 
 
-    private void clearColouredTiles()
+    void clearColouredTiles()
     {
-        for (Coord reset: potentialMoves)
+        for (Coord reset: movingPiecesMoves)
         {
             getTile(reset.x, reset.y).setColourDefault();
         }
@@ -343,11 +350,11 @@ public class Board {
         AIMakingMove = moving;
     }
 
-    public ChessUI getUi() {
+    ChessUI getUi() {
         return ui;
     }
 
-    public Tile getMovingTile() {
+    Tile getMovingTile() {
         return movingTile;
     }
 
@@ -355,8 +362,13 @@ public class Board {
         return playersTurn;
     }
 
-    public LinkedList<Board> getPreviousMoves() {
-        return previousMoves;
+    Set<Coord> getPlayersMoves()
+    {
+        return playersMoves;
+    }
+
+    LinkedList<Board> getPreviousBoardStates() {
+        return previousBoardStates;
     }
 
     Player getOpponent()
@@ -372,9 +384,9 @@ public class Board {
         return p2;
     }
 
-    Set<Coord> getPotentialMoves()
+    Set<Coord> getMovingPiecesMoves()
     {
-        return potentialMoves;
+        return movingPiecesMoves;
     }
 
     Piece getMovingPiece()

@@ -54,7 +54,7 @@ abstract class Piece
         firstMove = piece.firstMove;
     }
 
-    abstract Set<Coord> getValidMoves(Board board);
+    abstract HashSet<Coord> getValidMoves(Board board);
     /*
      * setDrawing's purpose is to compile an assortment of Shapes and add them to the ComplexShape group to be drawn
      * via paintComponent's Graphic object
@@ -146,9 +146,9 @@ class Pawn extends Piece
     }
 
     @Override
-    public Set<Coord> getValidMoves(Board board)
+    public HashSet<Coord> getValidMoves(Board board)
     {
-        Set<Coord> moves = new HashSet<>();
+        HashSet<Coord> moves = new HashSet<>();
         int x = position.x;
         int y = position.y;
         int singleMove = (teamPiece == P1) ? -1 : 1; // changes if team == black or white
@@ -251,9 +251,9 @@ class Castle extends Piece
     }
 
     @Override
-    Set<Coord> getValidMoves(Board board)
+    HashSet<Coord> getValidMoves(Board board)
     {
-        Set<Coord> moves = new HashSet<>();
+        HashSet<Coord> moves = new HashSet<>();
         //forward moves
         int x = position.x;
         int y = position.y + 1;
@@ -347,8 +347,8 @@ class Horse extends Piece
     }
 
     @Override
-    public Set<Coord> getValidMoves(Board board) {
-        Set<Coord> moves = new HashSet<>();
+    public HashSet<Coord> getValidMoves(Board board) {
+        HashSet<Coord> moves = new HashSet<>();
         // forward 2 right 1
         int x = position.x + 1;
         int y = position.y + 2;
@@ -421,8 +421,8 @@ class Bishop extends Piece
     }
 
     @Override
-    Set<Coord> getValidMoves(Board board) {
-        Set<Coord> moves = new HashSet<>();
+    HashSet<Coord> getValidMoves(Board board) {
+        HashSet<Coord> moves = new HashSet<>();
         //forward right
         int x = position.x +1;
         int y = position.y +1;
@@ -507,8 +507,8 @@ class Queen extends Piece
     }
 
     @Override
-    public Set<Coord> getValidMoves(Board board) {
-        Set<Coord> moves = new HashSet<>();
+    public HashSet<Coord> getValidMoves(Board board) {
+        HashSet<Coord> moves = new HashSet<>();
         //forward right
         int x = position.x +1;
         int y = position.y +1;
@@ -612,9 +612,9 @@ class King extends Piece
     }
 
     @Override
-    public Set<Coord> getValidMoves(Board board)
+    public HashSet<Coord> getValidMoves(Board board)
     {
-        Set<Coord> moves = new HashSet<>();
+        HashSet<Coord> moves = new HashSet<>();
         //forward
         int x = position.x;
         int y = position.y + 1;

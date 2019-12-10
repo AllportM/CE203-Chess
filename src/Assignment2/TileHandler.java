@@ -3,6 +3,7 @@ package Assignment2;
 import javax.swing.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Arrays;
 
 import static Assignment2.Team.*;
 public class TileHandler implements MouseListener {
@@ -23,10 +24,11 @@ public class TileHandler implements MouseListener {
         Tile tileEntered = ((Tile)e.getComponent());
         if (!player.isMoving() && player.isHuman() && tileEntered.isOccupied()
                 && ((HumanPlayer) player).hasPiece(tileEntered)
-                && player.getPieceMoves(tileEntered.getTilePiece()).size() > 0)
+                && board.getPlayersMoves().contains(tileEntered.getTileCoord()))
         {
             tileEntered.setColourMovePiece();
             board.getUi().repaint();
+            entered = true;
         }
     }
 
@@ -37,6 +39,7 @@ public class TileHandler implements MouseListener {
         {
             tileExited.setColourDefault();
             board.getUi().repaint();
+            if (entered) entered = false;
         }
     }
 
@@ -61,13 +64,15 @@ public class TileHandler implements MouseListener {
     public void mouseReleased(MouseEvent e) {
         Player pTurn = board.getPlayersTurn();
         Tile tileClicked = ((Tile)e.getComponent());
-        if (shortClick && pTurn.isHuman())
+        if (shortClick && entered && pTurn.isHuman())
         {
             // makes move if human
-            if (pTurn.isMoving() && (pTurn.getPieceMoves(board.getMovingPiece()).contains(tileClicked.getTileCoord())
-                    || tileClicked.getTileCoord().equals(board.getMovingTile().getTileCoord())))
+            if (pTurn.isMoving() && ((board.getMovingPiecesMoves().contains(tileClicked.getTileCoord()))
+                || tileClicked.getTileCoord().equals(board.getMovingTile().getTileCoord())))
             {
-                pTurn.makeMove(tileClicked);
+                board.clearColouredTiles();
+                entered = false;
+                pTurn.board.makeMove(tileClicked.getTileCoord());
                 board.getUi().repaint();
                 // ai makes move if its turn
                 if (board.getP2().getPlayerType() == AI && board.getPlayersTurn().getTeam() == P2)
@@ -78,12 +83,10 @@ public class TileHandler implements MouseListener {
                 }
             }
             // considers move if human
-            else if (!pTurn.isMoving() && tileClicked.isOccupied() && ((HumanPlayer) pTurn).hasPiece(tileClicked)
-                && pTurn.getPieceMoves(tileClicked.getTilePiece()).size() > 0)
+            else if (!pTurn.isMoving())
 
             {
-                ((HumanPlayer) pTurn).considerMove(tileClicked);
-
+                board.considerMove(tileClicked.getTileCoord());
             }
         }
         if (board.isGameOver())

@@ -1,6 +1,7 @@
 package Assignment2;
 
 import java.util.*;
+import static Assignment2.Team.*;
 
 class AIPlayerController {
     TreeSet<PointsAndMoves> score;
@@ -38,7 +39,7 @@ class AIPlayerController {
         if (b.isGameOver() && b.getWinner() == b.getP2()) return 23000;
         else if (b.isGameOver()) return 0;
 
-        List<Integer> scores = new ArrayList<>();
+        TreeSet<PointsAndMoves> scores = new TreeSet<>();
         int temp;
         Player player = b.getPlayersTurn();
         if (depth == difficulty && player == b.getP1()) return returnAIBoardEval(b);
@@ -66,16 +67,17 @@ class AIPlayerController {
                 int currentScore;
                 if (pInt == 1) {
                     currentScore = miniMax(0, depth + 1, alpha, beta, b, newN);
-                    scores.add(currentScore);
+                    move.setScore(currentScore);
+                    scores.add(move);
                     temp = Math.max(temp, currentScore);
                     alpha = Math.max(alpha, temp);
-                    move.setScore(currentScore);
                     if (depth == 0) {
                         score.add(move);
                     }
                 } else if (pInt == 0) {
                     currentScore = miniMax(1, depth + 1, alpha, beta, b, newN);
-                    scores.add(currentScore);
+                    move.setScore(currentScore);
+                    scores.add(move);
                     temp = Math.min(temp, currentScore);
                     beta = Math.min(beta, temp);
                 }
@@ -87,12 +89,12 @@ class AIPlayerController {
         }
         catch (NullPointerException e)
         {
-            original.takeMove(b);
+            original.takeMove(newN.b);
             System.out.println("Null pointer");
         }
 //        }
 //
-        return (player == b.getP2())? maxScores(scores): minScored(scores);
+        return (player == b.getP2())? scores.first().getScore(): scores.last().getScore();
     }
 
     private int maxScores(List<Integer> scores)
@@ -121,51 +123,22 @@ class AIPlayerController {
         return scores[1] - scores[0]; // returns p1 score less p2 score (ai's best score)
     }
 
-    private int[] evalBoard(Board board)
+    private int[] evalBoard(final Board board)
     {
         int[] scores = new int[2];
         int p1Score = 0;
         int p2Score = 0;
         for (Piece piece: board.getP1().getPlayerPieces())
         {
-            p1Score += pieceScore(piece);
+            p1Score += getPieceScore(piece);
         }
         for (Piece piece: board.getP2().getPlayerPieces())
         {
-            p2Score += pieceScore(piece);
+            p2Score += getPieceScore(piece);
         }
         scores[0] = p1Score;
         scores[1] = p2Score;
         return scores;
-    }
-
-    private int pieceScore(Piece piece)
-    {
-        if (piece instanceof Pawn)
-        {
-            return 100;
-        }
-        if (piece instanceof Bishop)
-        {
-            return 330;
-        }
-        if (piece instanceof Castle)
-        {
-            return 500;
-        }
-        if (piece instanceof Horse)
-        {
-            return 320;
-        }
-        if (piece instanceof Queen)
-        {
-            return 900;
-        }
-        if (piece instanceof King)
-        {
-            return 2000;
-        }
-        else return 0;
     }
 
 //    private void miniMax2(int depth, Board b)

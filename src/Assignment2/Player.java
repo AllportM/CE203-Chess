@@ -107,8 +107,7 @@ abstract class Player
         }
         for (Piece oppPiece: board.getOpponent().getPlayerPieces())
         {
-            if (oppPiece.getValidMoves(board).contains(king.getPosition()) && (oppPiece != pieceTaken
-            || pieceTaken == null))
+            if (oppPiece.getValidMoves(board).contains(king.getPosition()) && oppPiece != pieceTaken)
             {
                 moves.remove(destination);
             }
@@ -125,10 +124,10 @@ abstract class Player
     }
 
 
-    Set<Coord> getPieceMoves(Piece piece)
+    HashSet<Coord> getPieceMoves(Piece piece)
     {
         // gets only valid moves that does not place king in check by simulating each pieces moves & resetting
-        Set<Coord> moves = new HashSet<>();
+        HashSet<Coord> moves = new HashSet<>();
         moves.addAll(piece.getValidMoves(board));
         Tile origin = board.getTile(piece.getPosition());
         origin.clearPiece();
@@ -186,6 +185,7 @@ abstract class Player
             }
         }
         origin.setPiece(piece);
+        if (piece instanceof Horse) System.out.println(moves.size() + "\n" + piece);
         // checks valid castling moves using same method as above, but placing king in castled move
 //        if (piece instanceof King)
 //        {
@@ -312,16 +312,6 @@ abstract class Player
         return moves;
     }
 
-    boolean outOfMoves()
-    {
-        HashSet<Coord> allMoves = new HashSet<>();
-        for (Piece piece: playerPieces)
-        {
-            allMoves.addAll(getPieceMoves(piece));
-        }
-        return allMoves.size() == 0;
-    }
-
     void movePiece(Piece piece, Coord origin, Coord destination)
     {
         // makes castling move
@@ -420,10 +410,9 @@ abstract class Player
         if (!pawnUpgrade) board.getTile(destination).setPiece(piece);
 
         // sets king under threat
-
         piece.setCoord(destination);
         board.getTile(origin).clearPiece();
-        if (getPieceMoves(piece).contains(board.opponent.getKing().getPosition()))
+        if (piece.getValidMoves(board).contains(board.opponent.getKing().getPosition()))
         {
             board.opponent.getKing().setUnderThreat(piece);
         }
@@ -509,16 +498,6 @@ class HumanPlayer extends Player
         super(player, board);
     }
 
-    public boolean considerMove(Tile tile)
-    {
-        if (getPieceMoves(tile.getTilePiece()).size() > 0)
-        {
-            board.considerMove(tile.getTileCoord());
-            return true;
-        }
-        else return false;
-    }
-
     public boolean makeMove(Tile tile)
     {
         if (getPieceMoves(board.getMovingPiece()).contains(tile.getTileCoord())
@@ -531,7 +510,7 @@ class HumanPlayer extends Player
         return false;
     }
 
-    public boolean hasPiece(Tile t)
+    boolean hasPiece(Tile t)
     {
         for (Piece piece: getPlayerPieces())
         {
@@ -567,12 +546,10 @@ class AIPlayer extends Player
     // Polymorphism, changes the AI's behaviour of inherited makeMove for dynamic binding
     public boolean makeMove(Tile tile)
     {
-        board.getUi().repaint();
-        board.getUi().revalidate();
         PointsAndMoves move = module.getBestMove(board);
         if (!(module.broke)) board.considerMove(move.getOrigin());
         if (!(module.broke)) board.makeMove(move.getDestination());
-        System.out.println("ai finished turn" + board.getPreviousMoves().size());
+        System.out.println("ai finished turn" + board.getPreviousBoardStates().size());
         return true;
     }
 

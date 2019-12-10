@@ -1,5 +1,7 @@
 package Assignment2;
 
+import java.util.Objects;
+
 public class Coord implements Comparable<Coord>{
     int x, y;
     public Coord (int x, int y)
@@ -17,14 +19,17 @@ public class Coord implements Comparable<Coord>{
     @Override
     public boolean equals(Object o)
     {
-        return (o instanceof Coord && ((Coord) o).x == this.x && ((Coord) o).y == this.y);
+        if (!(o instanceof Coord)) return false;
+        if (((Coord) o).x == this.x && ((Coord) o).y == this.y) return true;
+        return false;
     }
 
     @Override
     public int hashCode()
     {
-        return ((Integer) x).hashCode() + ((Integer) y).hashCode();
+        return Objects.hash(x, y);
     }
+
 
     @Override
     public int compareTo(Coord o) {
