@@ -577,7 +577,6 @@ class King extends Piece
 {
 
     private boolean underThreat;
-    private Piece attacker;
 
     King (Coord place, Team team, Team teamCol)
     {
@@ -652,10 +651,9 @@ class King extends Piece
     }
 
 
-    void setUnderThreat(Piece attacker)
+    void setUnderThreat(boolean huh)
     {
-        underThreat = true;
-        this.attacker = attacker;
+        underThreat = huh;
     }
 
 
@@ -664,10 +662,6 @@ class King extends Piece
         return underThreat;
     }
 
-    Piece getAttacker()
-    {
-        return attacker;
-    }
 
     @Override
     public String toString() {
