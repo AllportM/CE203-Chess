@@ -411,14 +411,17 @@ abstract class Player
             board.opponent.removePiece(board.getTile(destination).getTilePiece());
         }
         board.getTile(destination).clearPiece();
+
         if (!pawnUpgrade) board.getTile(destination).setPiece(piece);
+
+        king.setUnderThreat(false);
 
         // sets king under threat
         piece.setCoord(destination);
         board.getTile(origin).clearPiece();
         if (piece.getValidMoves(board).contains(board.opponent.getKing().getPosition()))
         {
-            board.opponent.getKing().setUnderThreat(piece);
+            board.opponent.getKing().setUnderThreat(true);
         }
 
     }

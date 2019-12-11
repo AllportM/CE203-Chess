@@ -75,7 +75,7 @@ public class TileHandler implements MouseListener{
                 pTurn.board.makeMove(tileClicked.getTileCoord());
                 board.getUi().repaint();
                 // ai makes move if its turn
-                if (board.getP2().getPlayerType() == AI && board.getPlayersTurn().getTeam() == P2)
+                if (board.getP2().getPlayerType() == AI && board.getPlayersTurn().getTeam() == P2 && !board.isGameOver())
                 {
                     board.getP2().makeMove(tileClicked);
                     board.getUi().repaint();
