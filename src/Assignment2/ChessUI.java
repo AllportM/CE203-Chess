@@ -15,26 +15,29 @@ public class ChessUI extends JFrame {
     JButton startGame;
     ButtonHandler buttonH;
     private MenuBar menu;
+    ScoreHandler scoreH = new ScoreHandler("scores.txt");
+    private JPanel layoutCard = new JPanel(new CardLayout());
+    private JPanel chess;
+    private JPanel welcome;
+    private WinPanel;
 
     public ChessUI()
     {
-        Set<Coord> test = new HashSet<>();
-        test.add(new Coord(1, 0));
-        test.add(new Coord(2, 0));
-        test.add(new Coord(3, 0));
-        System.out.println(test.contains(new Coord(6, 1)));
         buttonH = new ButtonHandler(this);
         startGame = new JButton("I want to play a game...");
         menu = new MenuBar(this);
-        setPreferredSize(new Dimension(800, 800));
+        setPreferredSize(new Dimension(800, 800));x
         initPlayerWelcome();
         setJMenuBar(menu);
+        setVisible(true);
+        pack();
+        repaint();
     }
 
 
     void initChess(String teamCol, String op, String name)
     {
-        getContentPane().removeAll();
+        chess = new JPanel();
         setJMenuBar(menu);
         chessBoard = new Board(this, teamCol, op, name);
         JPanel board = new JPanel();
@@ -46,22 +49,17 @@ public class ChessUI extends JFrame {
                 board.add(tile);
             }
         }
-        add(board);
         setSize(new Dimension(800, 800));
-        setVisible(true);
-        pack();
-        repaint();
+        layoutCard.add(board, "BOARD");
     }
 
     void initPlayerWelcome()
     {
         if (getContentPane() != null) getContentPane().removeAll();
         setJMenuBar(menu);
-        JPanel centre = new PlayerWelcome(this);
-        add(centre, BorderLayout.CENTER);
+        JPanel welcome = new PlayerWelcome(this);
         setSize(new Dimension(800, 800));
-        setVisible(true);
-        pack();
+        layoutCard.add(welcome, "WELCOME");
     }
 
     public static void main(String[] args) {
