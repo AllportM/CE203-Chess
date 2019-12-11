@@ -5,31 +5,29 @@ import static Assignment2.Team.*;
 
 class AIPlayerController {
     TreeSet<PointsAndMoves> score;
-    Board original;
     int difficulty = 3;
     boolean broke = false;
+    Board brokeat;
 
     public AIPlayerController()
     {
     }
 
-    public PointsAndMoves getBestMove(Board board)
+    public PointsAndMoves getBestMove(final Board board)
     {
         callMiniMax(board);
         return score.first();
     }
 
-    private void callMiniMax(Board b)
+    private void callMiniMax(final Board b)
     {
-        Board copy = new Board(b);
-        this.original = b;
         int i;
-        if (copy.playersTurn.getPlayer() == Team.P1) i=0;
+        if (b.playersTurn.getPlayer() == Team.P1) i=0;
         else i = 1;
-        Node root = new Node(copy);
+        Node root = new Node(b);
         score = new TreeSet<>();
 //        miniMax2(0, copy);
-        miniMax(i,0, Integer.MIN_VALUE, Integer.MAX_VALUE, copy, root);
+        miniMax(i,0, Integer.MIN_VALUE, Integer.MAX_VALUE, b, root);
     }
 
     private int miniMax(int pInt, int depth, int alpha, int beta, Board b, Node n)
@@ -58,7 +56,7 @@ class AIPlayerController {
         }
         if (moves.size() == 0) System.out.println("no moves available");
 
-        try {
+//        try {
             for (PointsAndMoves move : moves) {
                 b.setAIMakingMove(true);
                 b.considerMove(move.getOrigin());
@@ -82,16 +80,17 @@ class AIPlayerController {
                     beta = Math.min(beta, temp);
                 }
                 b.revertMove();
+
                 if (alpha >= beta) {
                     break;
                 }
             }
-        }
-        catch (NullPointerException e)
-        {
-            original.takeMove(newN.b);
-            System.out.println("Null pointer");
-        }
+//        }
+//        catch (NullPointerException e)
+//        {
+//            brokeat = newN.b;
+//            System.out.println("Null pointer");
+//        }
 //        }
 //
         return (player == b.getP2())? scores.first().getScore(): scores.last().getScore();

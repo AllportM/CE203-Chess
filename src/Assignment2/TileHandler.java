@@ -6,7 +6,7 @@ import java.awt.event.MouseListener;
 import java.util.Arrays;
 
 import static Assignment2.Team.*;
-public class TileHandler implements MouseListener {
+public class TileHandler implements MouseListener{
     Board board;
     boolean shortClick = false;
     boolean entered = false;
@@ -24,7 +24,7 @@ public class TileHandler implements MouseListener {
         Tile tileEntered = ((Tile)e.getComponent());
         if (!player.isMoving() && player.isHuman() && tileEntered.isOccupied()
                 && ((HumanPlayer) player).hasPiece(tileEntered)
-                && board.getPlayersMoves().contains(tileEntered.getTileCoord()))
+                && player.getPieceMoves(tileEntered.getTilePiece()).size() > 0)
         {
             tileEntered.setColourMovePiece();
             board.getUi().repaint();

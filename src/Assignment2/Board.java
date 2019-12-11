@@ -13,13 +13,11 @@ public class Board {
     Player playersTurn;
     Player opponent;
     private HashSet<Coord> movingPiecesMoves;
-    private HashSet<Coord> playersMoves;
     private LinkedList<Board> previousBoardStates = new LinkedList<>();
     private Tile movingTile;
     private Piece movingPiece;
     private boolean gameOver = false;
     private Player winner;
-    private boolean AIEval;
     private boolean AIMakingMove;
 
     Board(ChessUI ui, String teamCol, String op, String name)
@@ -55,8 +53,6 @@ public class Board {
         p1.setName(name);
         p2.setName("Player 2");
         this.ui = ui;
-        playersMoves = new HashSet<>();
-        generatePlayersMoves();
 
 //        Queen test1 = new Queen(new Coord(3,3), P2, p2.colour);
 //        p2.addPiece(test1);
@@ -64,16 +60,8 @@ public class Board {
 //        Board testboard = new Board(this);
 //        System.out.println(testboard.getPlayersTurn());
         // test stalemate move white move first
-//        for (Iterator<Piece> it = p1.getPlayerPieces().iterator(); it.hasNext();)
-//        {
-//            Piece piece = it.next();
-//            it.remove();
-//        }
-//        for (Iterator<Piece> it = p2.getPlayerPieces().iterator(); it.hasNext();)
-//        {
-//            Piece piece = it.next();
-//            it.remove();
-//        }
+//        p1.clearPlayerPieces();
+//        p2.clearPlayerPieces();
 //        for (int i = 0; i < board.length; i++)
 //        {
 //            for (Tile tile: board[i])
@@ -81,6 +69,31 @@ public class Board {
 //                tile.clearPiece();
 //            }
 //        }
+//
+//        King king = new King(new Coord(4, 7), p1.getPlayer(), WHITE);
+//        board[7][4].setPiece(king);
+//        p1.getPlayerPieces().add(king);
+//        p1.setKing(king);
+//        King kingB = new King(new Coord(4,0), p2.getPlayer(), BLACK);
+//        p2.getPlayerPieces().add(kingB);
+//        p2.setKing(kingB);
+//        board[0][4].setPiece(kingB);
+//        Castle p2Castle = new Castle(new Coord(7,0), p2.getPlayer(), BLACK);
+//        board[0][7].setPiece(p2Castle);
+//        p2.getPlayerPieces().add(p2Castle);
+//        Bishop p2Bishop = new Bishop(new Coord(3, 0), p2.getPlayer(), BLACK);
+//        p2.getPlayerPieces().add(p2Bishop);
+//        board[0][3].setPiece(p2Bishop);
+//        Pawn p2Pawn1 = new Pawn(new Coord(3, 1), p2.getPlayer(), BLACK);
+//        p2.getPlayerPieces().add(p2Pawn1);
+//        board[1][3].setPiece(p2Pawn1);
+//        Pawn p2Pawn2 = new Pawn(new Coord(5, 1), p2.getPlayer(), BLACK);
+//        p2.getPlayerPieces().add(p2Pawn2);
+//        board[1][5].setPiece(p2Pawn2);
+//        Castle p1Castle = new Castle(new Coord(3, 6), p1.getPlayer(), WHITE);
+//        p1.getPlayerPieces().add(p1Castle);
+//        board[6][3].setPiece(p1Castle);
+//        generatePlayersMoves();
 //        King king = new King(new Coord(1, 2), p1.getPlayer(), WHITE);
 //        board[2][1].setPiece(king);
 //        p1.getPlayerPieces().add(king);
@@ -121,7 +134,6 @@ public class Board {
         {
             previousBoardStates.push(board.previousBoardStates.get(i));
         }
-        ui = board.ui;
         gameOver = board.gameOver;
         winner = board.winner;
         TileHandler th = new TileHandler(this);
@@ -157,22 +169,21 @@ public class Board {
         movingTile = getTile(origin);
         movingPiece = movingTile.getTilePiece();
         movingPiecesMoves = playersTurn.getPieceMoves(movingPiece);
-        if (!AIEval && !AIMakingMove && !playersTurn.getKing().isUnderThreat()) movingPiecesMoves.add(origin);
 
         // sets tile colours
-        if (!((AIEval || AIMakingMove)))
+        if (!((AIMakingMove)))
         {
             for (Coord move : movingPiecesMoves)
             {
                 Tile potentialMove = getTile(move);
-                if (potentialMove.isOccupied() && playersTurn.getTeam() != potentialMove.getTilePiece().teamPiece
-                        && (!AIEval && !AIMakingMove))
+                if (potentialMove.isOccupied() && playersTurn.getTeam() != potentialMove.getTilePiece().teamPiece)
                     potentialMove.setColourHostile();
-                else if (!AIEval && !AIMakingMove) getTile(move.x, move.y).setColourMoving();
+                else getTile(move.x, move.y).setColourMoving();
             }
         }
+        if (!AIMakingMove && !playersTurn.getKing().isUnderThreat()) movingPiecesMoves.add(origin);
 
-        if (!AIEval && !AIMakingMove) {
+        if (!AIMakingMove) {
             movingTile.clearPiece();
             ui.repaint();
         }
@@ -185,14 +196,14 @@ public class Board {
     {
         playersTurn.setMoving(false);
         // if player replaces piece to where it came from, just replaces it
-        if (destination.equals(movingTile.getTileCoord()))
+        if (destination.equals(movingTile.getTileCoord()) && !AIMakingMove)
         {
             getTile(destination).setPiece(movingPiece);
             clearColouredTiles();
             ui.repaint();
             return;
         }
-        if (!AIEval && !AIMakingMove) {
+        if (!AIMakingMove) {
             clearColouredTiles();
         }
 
@@ -205,23 +216,16 @@ public class Board {
 //        System.out.println("MOVED " + getTile(4, 7));
 
         // Changes playersTurn to opponent, and resets moving status, clears tile colours
-        if (playersTurn.getPlayer() == P1) {
-            playersTurn = p2;
-            opponent = p1;
-        } else {
-            playersTurn = p1;
-            opponent = p2;
-        }
+        Player temp = playersTurn;
+        playersTurn = opponent;
+        opponent = temp;
 
-        // generates all possible moves
         movingPiecesMoves = new HashSet<>();
-        playersMoves = new HashSet<>();
-        generatePlayersMoves();
 
 //        System.out.println("MOVED " + getTile(4, 7));
 
         // win check
-        if (playersMoves.size() == 0) {
+        if (playersTurn.outOfMoves()) {
             if (playersTurn.king.isUnderThreat()) {
                 gameOver = true;
                 winner = opponent;
@@ -240,14 +244,6 @@ public class Board {
 //        System.out.println("MOVED " + getTile(4, 7));
 //        System.out.println(playersTurn);
 //        System.out.println("player clicked is:- \n" + playersTurn);
-    }
-
-    private void generatePlayersMoves()
-    {
-        for (Piece piece: playersTurn.getPlayerPieces())
-        {
-            if (playersTurn.getPieceMoves(piece).size() > 0) playersMoves.add(piece.getPosition());
-        }
     }
 
     public void takeMove(Board previous)
@@ -280,7 +276,6 @@ public class Board {
         }
         gameOver = previous.gameOver;
         winner = null;
-        AIEval = previous.AIEval;
         ui.repaint();
     }
 
@@ -297,7 +292,7 @@ public class Board {
         }
         p1 = new HumanPlayer(previous.getP1(), this);
         p2 = (previous.getP2().getPlayerType()== AI)? new AIPlayer((AIPlayer) previous.getP2(), this):
-                new HumanPlayer((HumanPlayer) previous.getP2(), this);
+                new HumanPlayer(previous.getP2(), this);
         if (previous.playersTurn.getPlayer() == P1)
         {
             playersTurn = p1;
@@ -310,18 +305,21 @@ public class Board {
         }
         gameOver = previous.gameOver;
         winner = null;
-        AIEval = previous.AIEval;
-        ui.repaint();
+        if (!!AIMakingMove) ui.repaint();
     }
 
 
     void clearColouredTiles()
     {
-        for (Coord reset: movingPiecesMoves)
+        for (int i = 0; i < board.length; i++)
         {
-            getTile(reset.x, reset.y).setColourDefault();
+            for (Tile tile: board[i])
+            {
+                tile.setColourDefault();
+            }
         }
-        movingTile.setColourDefault();
+        ui.revalidate();
+        ui.repaint();
     }
 
     boolean isOccupied(int x, int y)
@@ -340,11 +338,6 @@ public class Board {
         return board[y][x];
     }
 
-    void setAIEval(Boolean evaluating)
-    {
-        AIEval = evaluating;
-    }
-
     void setAIMakingMove(Boolean moving)
     {
         AIMakingMove = moving;
@@ -360,11 +353,6 @@ public class Board {
 
     Player getPlayersTurn() {
         return playersTurn;
-    }
-
-    Set<Coord> getPlayersMoves()
-    {
-        return playersMoves;
     }
 
     LinkedList<Board> getPreviousBoardStates() {

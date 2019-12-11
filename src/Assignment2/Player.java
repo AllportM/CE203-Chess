@@ -127,8 +127,7 @@ abstract class Player
     HashSet<Coord> getPieceMoves(Piece piece)
     {
         // gets only valid moves that does not place king in check by simulating each pieces moves & resetting
-        HashSet<Coord> moves = new HashSet<>();
-        moves.addAll(piece.getValidMoves(board));
+        HashSet<Coord> moves = piece.getValidMoves(board);
         Tile origin = board.getTile(piece.getPosition());
         origin.clearPiece();
         for (Coord move: piece.getValidMoves(board))
@@ -139,7 +138,6 @@ abstract class Player
         if (piece instanceof Castle && piece.isFirstMove() && king.isFirstMove() && !castled)
         {
             Coord originCoord = piece.getPosition();
-            Coord kingOrigin = king.getPosition();
             switch (getTeam())
             {
                 case P1:
@@ -147,19 +145,13 @@ abstract class Player
                             || board.getTile(2, 7).isOccupied() || board.getTile(3, 7).isOccupied()))
                     {
                         Coord move = new Coord(3, 7);
-                        moves.add(move);
-                        king.setCoord(new Coord(2, 7));
-                        removeMovesPlacingKingInCheck(moves, piece, move);
-                        king.setCoord(kingOrigin);
+                        if (!(kingsCastleMoveBlocked(move))) moves.add(move);
                     }
                     if (originCoord.x == 7 && originCoord.y == 7 && !(board.getTile(5, 7).isOccupied()
                             || board.getTile(6, 7).isOccupied()))
                     {
                         Coord move = new Coord(5, 7);
-                        moves.add(move);
-                        king.setCoord(new Coord(6, 7));
-                        removeMovesPlacingKingInCheck(moves, piece, move);
-                        king.setCoord(kingOrigin);
+                        if (!(kingsCastleMoveBlocked(move))) moves.add(move);
                     }
                     break;
                 case P2:
@@ -167,25 +159,18 @@ abstract class Player
                             || board.getTile(2, 0).isOccupied() || board.getTile(3, 0).isOccupied()))
                     {
                         Coord move = new Coord(3, 0);
-                        moves.add(move);
-                        king.setCoord(new Coord(2, 0));
-                        removeMovesPlacingKingInCheck(moves, piece, move);
-                        king.setCoord(kingOrigin);
+                        if (!(kingsCastleMoveBlocked(move))) moves.add(move);
                     }
                     if (originCoord.x == 7 && originCoord.y == 0 && board.getP2().getKing().isFirstMove()
                             && !(board.getTile(5, 0).isOccupied() || board.getTile(6, 0).isOccupied()))
                     {
                         Coord move = new Coord(5, 0);
-                        moves.add(new Coord(6, 0));
-                        king.setCoord(new Coord(6, 0));
-                        removeMovesPlacingKingInCheck(moves, piece, move);
-                        king.setCoord(kingOrigin);
+                        if (!(kingsCastleMoveBlocked(move))) moves.add(move);
                     }
                     break;
             }
         }
         origin.setPiece(piece);
-        if (piece instanceof Horse) System.out.println(moves.size() + "\n" + piece);
         // checks valid castling moves using same method as above, but placing king in castled move
 //        if (piece instanceof King)
 //        {
@@ -310,6 +295,25 @@ abstract class Player
 //            }
 //        }
         return moves;
+    }
+
+    boolean outOfMoves()
+    {
+        HashSet<Coord> moves = new HashSet<>();
+        for (Piece piece: playerPieces)
+        {
+            moves.addAll(getPieceMoves(piece));
+        }
+        return moves.size() == 0;
+    }
+
+    private boolean kingsCastleMoveBlocked(Coord move)
+    {
+        for (Piece piece: board.getOpponent().getPlayerPieces())
+        {
+            if (piece.getValidMoves(board).contains(move)) return true;
+        }
+        return false;
     }
 
     void movePiece(Piece piece, Coord origin, Coord destination)
@@ -466,7 +470,7 @@ abstract class Player
         return player;
     }
 
-    public Team getColour() {
+    Team getColour() {
         return colour;
     }
 
@@ -544,12 +548,15 @@ class AIPlayer extends Player
     }
 
     // Polymorphism, changes the AI's behaviour of inherited makeMove for dynamic binding
-    public boolean makeMove(Tile tile)
+    public boolean makeMove(final Tile tile)
     {
+        board.clearColouredTiles();
         PointsAndMoves move = module.getBestMove(board);
-        if (!(module.broke)) board.considerMove(move.getOrigin());
-        if (!(module.broke)) board.makeMove(move.getDestination());
-        System.out.println("ai finished turn" + board.getPreviousBoardStates().size());
+        if (module.broke) board.takeMove(module.brokeat);
+        else {
+            board.considerMove(move.getOrigin());
+            board.makeMove(move.getDestination());
+        }
         return true;
     }
 
