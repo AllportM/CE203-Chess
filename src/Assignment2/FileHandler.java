@@ -1,7 +1,5 @@
 package Assignment2;
 
-import netscape.javascript.JSObject;
-
 import java.io.*;
 import java.util.*;
 
@@ -20,7 +18,7 @@ abstract class FileHandler implements FileHandlerIF
     private String filename;
     private File file;
 
-    public FileHandler(String filename)
+    FileHandler(String filename)
     {
         if (openFile(filename)) // opens file, if file exists returns true
         {
@@ -30,7 +28,9 @@ abstract class FileHandler implements FileHandlerIF
 
     private void getContents()
     {
-        fileReader = new Scanner(filename);
+        try {
+            fileReader = new Scanner(file);
+        }catch(FileNotFoundException ignored){} // does nothing as file is created by this class if not exists
         while (fileReader.hasNextLine())
         {
             String line = readLine();
@@ -53,8 +53,12 @@ abstract class FileHandler implements FileHandlerIF
     }
 
     @Override
-    public boolean writeLine(String line, boolean eow) throws IOException{
-        contentWriter = new PrintStream(file);
+    public boolean writeLine(String line, boolean eow)
+    {
+        try {
+            contentWriter = new PrintStream(file);
+        }
+        catch (IOException e){} // does nothing as file is either opened or created in openFile method
         contentWriter.println(line);
         if (eow)
         {
@@ -78,14 +82,17 @@ class ScoreHandler extends FileHandler
             for(int i = 0; i < fileLines.size(); i++)
             {
                 String entry = fileLines.get(i);
+                System.out.println(entry);
+                String[] entity= entry.split(" ");
+                System.out.println(entity);
                 scores.add(new PlayerScore(entry));
             }
         }
     }
 
-    public void writeScores() throws IOException
+    void writeScores()
     {
-        for (Iterator<PlayerScore> it = scores.iterator(); it.hasNext(); )
+        for (Iterator<PlayerScore> it = scores.iterator(); it.hasNext();)
         {
             PlayerScore next = it.next();
             if (next != scores.last())
@@ -94,5 +101,9 @@ class ScoreHandler extends FileHandler
             }
         }
         writeLine(scores.last().getName() + " " + scores.last().getScore() + " " + scores.last().getTime(), true);
+    }
+
+    TreeSet<PlayerScore> getScores() {
+        return scores;
     }
 }

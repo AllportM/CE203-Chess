@@ -15,61 +15,74 @@ public class ChessUI extends JFrame {
     JButton startGame;
     ButtonHandler buttonH;
     private MenuBar menu;
-    ScoreHandler scoreH = new ScoreHandler("scores.txt");
-    private JPanel layoutCard = new JPanel(new CardLayout());
-    private JPanel chess;
-    private JPanel welcome;
-    private WinPanel;
+    private JPanel chessPanel;
 
     public ChessUI()
     {
+        Set<Coord> test = new HashSet<>();
+        test.add(new Coord(1, 0));
+        test.add(new Coord(2, 0));
+        test.add(new Coord(3, 0));
+        System.out.println(test.contains(new Coord(6, 1)));
         buttonH = new ButtonHandler(this);
         startGame = new JButton("I want to play a game...");
         menu = new MenuBar(this);
-        setPreferredSize(new Dimension(800, 800));x
+        setPreferredSize(new Dimension(800, 800));
         initPlayerWelcome();
         setJMenuBar(menu);
-        setVisible(true);
-        pack();
-        repaint();
     }
 
 
     void initChess(String teamCol, String op, String name)
     {
-        chess = new JPanel();
+        getContentPane().removeAll();
         setJMenuBar(menu);
         chessBoard = new Board(this, teamCol, op, name);
-        JPanel board = new JPanel();
-        board.setLayout(new GridLayout(8, 8));
+        chessPanel = new JPanel();
+        chessPanel.setLayout(new GridLayout(8, 8));
         for (int i = 0; i < chessBoard.board.length; i++)
         {
             for (Tile tile: chessBoard.board[i])
             {
-                board.add(tile);
+                chessPanel.add(tile);
             }
         }
+        add(chessPanel);
         setSize(new Dimension(800, 800));
-        layoutCard.add(board, "BOARD");
+//        initWinner();
+        setVisible(true);
+        pack();
+        repaint();
+    }
+
+    void initWinner()
+    {
+        getContentPane().removeAll();
+        JPanel overlayPan = new JPanel();
+        overlayPan.setLayout(new OverlayLayout(overlayPan));
+        overlayPan.add(new WinPanel(chessBoard));
+        overlayPan.add(chessPanel);
+        add(overlayPan);
+        setVisible(true);
+        pack();
+        repaint();
     }
 
     void initPlayerWelcome()
     {
         if (getContentPane() != null) getContentPane().removeAll();
+        setLayout(new BorderLayout());
         setJMenuBar(menu);
-        JPanel welcome = new PlayerWelcome(this);
+        JPanel centre = new PlayerWelcome(this);
+        add(centre, BorderLayout.CENTER);
         setSize(new Dimension(800, 800));
-        layoutCard.add(welcome, "WELCOME");
+        setVisible(true);
+        pack();
     }
 
     public static void main(String[] args) {
         ChessUI current = new ChessUI();
         current.repaint();
-    }
-
-    public void setChessBoard(Board b)
-    {
-        chessBoard = b;
     }
 
     public MenuBar getMenu() {
@@ -250,12 +263,10 @@ class PlayerWelcome extends JPanel {
 
         JPanel vs = new JPanel();
         vs.setLayout(new GridLayout(1, 3));
-        int piece1 = (int) (Math.random() * 6);
         Tile whiteSample = new Tile(new Coord(0, 0));
-        whiteSample.setPiece(getPiece(piece1, 1));
-        int piece2 = (int) (Math.random() * 6);
+        whiteSample.setPiece(getPiece( 1));
         Tile blackSample = new Tile(new Coord(2, 0));
-        blackSample.setPiece(getPiece(piece2, 2));
+        blackSample.setPiece(getPiece( 2));
         Tile blankSample = new Tile(new Coord(1, 0));
         JLabel vsLabel = new JLabel("VS");
         blankSample.setBorder(BorderFactory.createEmptyBorder(35,0,40,0));
@@ -271,10 +282,11 @@ class PlayerWelcome extends JPanel {
         add(vs);
     }
 
-    private Piece getPiece(int value, int team)
+    static Piece getPiece(int team)
     {
+        int randomPiece = (int) Math.random() * 6;
         Team col = (team == 1)? Team.WHITE: Team.BLACK;
-        switch(value)
+        switch(randomPiece)
         {
             case 0:
                 return new Pawn(new Coord(0, 0), P1, col);

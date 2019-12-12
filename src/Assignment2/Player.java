@@ -1,6 +1,8 @@
 package Assignment2;
 
 import java.io.FileOutputStream;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 import static Assignment2.Team.*;
@@ -334,6 +336,7 @@ abstract class Player
                         getPlayerPieces().remove(king);
                         king = new King(new Coord(2, 7), getTeam(), getColour());
                         playerPieces.add(king);
+                        king.setFirstMove();
                         board.getTile(2, 7).setPiece(king);
                         castled = true;
                     }
@@ -344,6 +347,7 @@ abstract class Player
                         getPlayerPieces().remove(king);
                         king = new King(new Coord(6, 7), getTeam(), getColour());
                         playerPieces.add(king);
+                        king.setFirstMove();
                         board.getTile(6, 7).setPiece(king);
                         castled = true;
                     }
@@ -357,6 +361,7 @@ abstract class Player
                         getPlayerPieces().remove(king);
                         king = new King(new Coord(2, 0), getTeam(), getColour());
                         playerPieces.add(king);
+                        king.setFirstMove();
                         board.getTile(2, 0).setPiece(king);
                         castled = true;
                     }
@@ -367,6 +372,7 @@ abstract class Player
                         getPlayerPieces().remove(king);
                         king = new King(new Coord(6, 0), getTeam(), getColour());
                         playerPieces.add(king);
+                        king.setFirstMove();
                         board.getTile(6, 0).setPiece(king);
                         castled = true;
                     }
@@ -495,6 +501,10 @@ abstract class Player
 }
 class HumanPlayer extends Player
 {
+    private long startTime;
+    private int secondsTotal = 0;
+    private Team winStatus;
+
     HumanPlayer(Team colour, Team player, Board board)
     {
         super(colour, player, board);
@@ -504,6 +514,8 @@ class HumanPlayer extends Player
     HumanPlayer(Player player, Board board)
     {
         super(player, board);
+        secondsTotal = ((HumanPlayer) player).secondsTotal;
+        startTime = ((HumanPlayer) player).startTime;
     }
 
     public boolean makeMove(Tile tile)
@@ -518,6 +530,17 @@ class HumanPlayer extends Player
         return false;
     }
 
+    void startTime()
+    {
+        startTime = System.currentTimeMillis();
+    }
+
+    void endTime()
+    {
+        secondsTotal += System.currentTimeMillis() - startTime;
+        System.out.println(secondsTotal);
+    }
+
     boolean hasPiece(Tile t)
     {
         for (Piece piece: getPlayerPieces())
@@ -525,6 +548,18 @@ class HumanPlayer extends Player
             if (piece == t.getTilePiece()) return true;
         }
         return false;
+    }
+
+    public int getSecondsTotal() {
+        return secondsTotal;
+    }
+
+    public void setWinStatus(Team winStatus) {
+        this.winStatus = winStatus;
+    }
+
+    public Team getWinStatus() {
+        return winStatus;
     }
 
     @Override
@@ -536,10 +571,10 @@ class HumanPlayer extends Player
 
 class AIPlayer extends Player
 {
-    TreeSet<PointsAndMoves> score;
-    int difficulty = 3;
-    boolean broke = false;
-    Board brokeat;
+    private TreeSet<PointsAndMoves> score;
+    private int difficulty = 3;
+    private boolean broke = false;
+    private Board brokeat;
 
     AIPlayer(Team colour, Team player, Board board)
     {
@@ -646,26 +681,6 @@ class AIPlayer extends Player
 //        }
 //
         return (player == b.getP2())? scores.first().getScore(): scores.last().getScore();
-    }
-
-    private int maxScores(List<Integer> scores)
-    {
-        Integer max = Integer.MIN_VALUE;
-        for (Integer score: scores)
-        {
-            max = (score > max)? score: max;
-        }
-        return max;
-    }
-
-    private int minScored(List<Integer> scores)
-    {
-        Integer min = Integer.MAX_VALUE;
-        for (Integer score: scores)
-        {
-            min = (score < min)? score: min;
-        }
-        return min;
     }
 
     private int returnAIBoardEval(Board board)

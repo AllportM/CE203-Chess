@@ -2,7 +2,6 @@ package Assignment2;
 
 import java.awt.*;
 import java.util.*;
-import java.util.List;
 
 import static Assignment2.Team.*;
 

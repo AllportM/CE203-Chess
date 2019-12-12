@@ -6,7 +6,9 @@ public enum Team {
     P1,
     P2,
     AI,
-    HUMAN;
+    HUMAN,
+    WINNER,
+    STALEMATE;
 
     public static final int getPieceScore(Piece piece)
     {

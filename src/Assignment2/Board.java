@@ -18,7 +18,7 @@ public class Board {
     private Piece movingPiece;
     private boolean gameOver = false;
     private Player winner;
-    private boolean AIMakingMove;
+    private boolean aiMakingMove;
 
     Board(ChessUI ui, String teamCol, String op, String name)
     {
@@ -41,6 +41,7 @@ public class Board {
                         new AIPlayer(BLACK, P2, this);
                 playersTurn = p1;
                 opponent = p2;
+                ((HumanPlayer) p1).startTime();
                 break;
             case "black":
                 p1 = new HumanPlayer(BLACK, P1, this);
@@ -171,7 +172,7 @@ public class Board {
         movingPiecesMoves = playersTurn.getPieceMoves(movingPiece);
 
         // sets tile colours
-        if (!((AIMakingMove)))
+        if (!((aiMakingMove)))
         {
             for (Coord move : movingPiecesMoves)
             {
@@ -181,13 +182,13 @@ public class Board {
                 else getTile(move.x, move.y).setColourMoving();
             }
         }
-        if (!AIMakingMove && !playersTurn.getKing().isUnderThreat()) movingPiecesMoves.add(origin);
+        if (!aiMakingMove && !playersTurn.getKing().isUnderThreat()) movingPiecesMoves.add(origin);
 
-        if (!AIMakingMove) {
+        if (!aiMakingMove) {
             movingTile.clearPiece();
             ui.repaint();
         }
-        if (AIMakingMove) {
+        if (aiMakingMove) {
             movingTile.clearPiece();
         }
        }
@@ -195,15 +196,16 @@ public class Board {
     void makeMove (Coord destination)
     {
         playersTurn.setMoving(false);
+        if (playersTurn == p1 && !aiMakingMove) ((HumanPlayer) p1).endTime();
         // if player replaces piece to where it came from, just replaces it
-        if (destination.equals(movingTile.getTileCoord()) && !AIMakingMove)
+        if (destination.equals(movingTile.getTileCoord()) && !aiMakingMove)
         {
             getTile(destination).setPiece(movingPiece);
             clearColouredTiles();
             ui.repaint();
             return;
         }
-        if (!AIMakingMove) {
+        if (!aiMakingMove) {
             clearColouredTiles();
         }
 
@@ -220,6 +222,8 @@ public class Board {
         playersTurn = opponent;
         opponent = temp;
 
+        if (playersTurn == p1 && !aiMakingMove) ((HumanPlayer) p1).startTime();
+
         movingPiecesMoves = new HashSet<>();
 
 //        System.out.println("MOVED " + getTile(4, 7));
@@ -234,6 +238,7 @@ public class Board {
                 winner = null;
                 gameOver = true;
             }
+            if (!aiMakingMove) ui.initWinner();
         }
 
 //        System.out.println("MOVED " + getTile(4, 7));
@@ -305,7 +310,7 @@ public class Board {
         }
         gameOver = previous.gameOver;
         winner = null;
-        if (!!AIMakingMove) ui.repaint();
+        if (!!aiMakingMove) ui.repaint();
     }
 
 
@@ -340,7 +345,7 @@ public class Board {
 
     void setAIMakingMove(Boolean moving)
     {
-        AIMakingMove = moving;
+        aiMakingMove = moving;
     }
 
     ChessUI getUi() {
