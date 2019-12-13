@@ -1,12 +1,14 @@
 package Assignment2;
 
 import javax.swing.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Arrays;
 
 import static Assignment2.Team.*;
-public class TileHandler implements MouseListener{
+public class TileHandler implements MouseListener, KeyListener {
     Board board;
     boolean shortClick = false;
     boolean entered = false;
@@ -20,9 +22,10 @@ public class TileHandler implements MouseListener{
     @Override
     public void mouseEntered(MouseEvent e)
     {
+        board.getUi().keyListener.clearIndex();
         Player player = board.getPlayersTurn();
         Tile tileEntered = ((Tile)e.getComponent());
-        if (!player.isMoving() && player.isHuman() && tileEntered.isOccupied()
+        if (!board.isGameOver() && !player.isMoving() && player.isHuman() && tileEntered.isOccupied()
                 && ((HumanPlayer) player).hasPiece(tileEntered)
                 && player.getPieceMoves(tileEntered.getTilePiece()).size() > 0)
         {
@@ -35,7 +38,7 @@ public class TileHandler implements MouseListener{
     @Override
     public void mouseExited(MouseEvent e) {
         Tile tileExited = ((Tile)e.getComponent());
-        if (!board.getPlayersTurn().isMoving())
+        if (!board.isGameOver() && !board.getPlayersTurn().isMoving())
         {
             tileExited.setColourDefault();
             board.getUi().repaint();
@@ -53,8 +56,9 @@ public class TileHandler implements MouseListener{
     }
 
     @Override
-    public void mousePressed(MouseEvent e) {
-        if (!shortClick)
+    public void mousePressed(MouseEvent e)
+    {
+        if (!board.isGameOver() && !shortClick)
         {
             shortClick = true;
         }
@@ -64,7 +68,7 @@ public class TileHandler implements MouseListener{
     public void mouseReleased(MouseEvent e) {
         Player pTurn = board.getPlayersTurn();
         Tile tileClicked = ((Tile)e.getComponent());
-        if (shortClick && entered && pTurn.isHuman())
+        if (shortClick && entered && pTurn.isHuman() && !board.isGameOver())
         {
             // makes move if human
             if (pTurn.isMoving() && ((board.getMovingPiecesMoves().contains(tileClicked.getTileCoord()))
@@ -77,9 +81,8 @@ public class TileHandler implements MouseListener{
                 // ai makes move if its turn
                 if (board.getP2().getPlayerType() == AI && board.getPlayersTurn().getTeam() == P2 && !board.isGameOver())
                 {
-                    board.getP2().makeMove(tileClicked);
+                    ((AIPlayer) board.getP2()).makeMove();
                     board.getUi().repaint();
-                    board.getUi().revalidate();
                 }
             }
             // considers move if human
@@ -89,12 +92,22 @@ public class TileHandler implements MouseListener{
                 board.considerMove(tileClicked.getTileCoord());
             }
         }
-        if (board.isGameOver())
-        {
-            System.out.println("Congratulations " + ((board.getWinner() == board.getP1()? "Player 1":
-                    board.getWinner() == board.getP2()? "Player 2":", you reached a StaleMate")));
-        }
         shortClick = false;
     }
 
+    @Override
+    public void keyTyped(KeyEvent e) {
+        System.out.println(e.getKeyCode());
+        System.out.println("Hey");
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+
+    }
 }

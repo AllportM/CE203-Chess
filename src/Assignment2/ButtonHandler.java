@@ -31,5 +31,9 @@ public class ButtonHandler implements ActionListener {
         {
             app.chessBoard.revertMove();
         }
+        if (((JButton) e.getSource()).getText() == "Close")
+        {
+            app.reDoChess();
+        }
     }
 }

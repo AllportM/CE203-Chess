@@ -46,19 +46,25 @@ class PlayerScore implements Comparable<PlayerScore>{
     @Override
     public int compareTo(PlayerScore o)
     {
-        return this.score - o.score;
+        return (this.score - o.score > 0)? 1: (this.score - o.score) < 0? -1: this.name.compareTo(o.name);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(score, time, name);
+        return Objects.hash(name, score, time);
     }
 
     @Override
     public boolean equals(Object o)
     {
-        PlayerScore newO = (o instanceof PlayerScore)? (PlayerScore) o: null;
-        return (newO != null && newO.score == score && newO.name.equals(name) && newO.score == score);
+        return (o instanceof PlayerScore && ((PlayerScore) o).name.equals(name) && ((PlayerScore) o).score == score
+                && ((PlayerScore) o).time==time);
+    }
+
+    @Override
+    public String toString()
+    {
+        return name + " " + score + " " + time;
     }
 }

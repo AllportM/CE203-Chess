@@ -4,21 +4,25 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
 import static Assignment2.Team.P1;
 
-public class ChessUI extends JFrame {
+public class ChessUI extends JFrame{
     Board chessBoard;
     JButton startGame;
     ButtonHandler buttonH;
     private MenuBar menu;
     private JPanel chessPanel;
+    MyKeyListener keyListener;
 
     public ChessUI()
     {
+        setFocusable(true);
         Set<Coord> test = new HashSet<>();
         test.add(new Coord(1, 0));
         test.add(new Coord(2, 0));
@@ -48,8 +52,9 @@ public class ChessUI extends JFrame {
             }
         }
         add(chessPanel);
+        keyListener = new MyKeyListener(chessBoard);
+        addKeyListener(keyListener);
         setSize(new Dimension(800, 800));
-//        initWinner();
         setVisible(true);
         pack();
         repaint();
@@ -57,12 +62,27 @@ public class ChessUI extends JFrame {
 
     void initWinner()
     {
+        try {
+            Thread.sleep(2000);
+        }
+        catch (InterruptedException ignore){}
         getContentPane().removeAll();
+
         JPanel overlayPan = new JPanel();
         overlayPan.setLayout(new OverlayLayout(overlayPan));
         overlayPan.add(new WinPanel(chessBoard));
         overlayPan.add(chessPanel);
         add(overlayPan);
+        setVisible(true);
+        pack();
+        repaint();
+    }
+
+    void reDoChess()
+    {
+        getContentPane().removeAll();
+        add(chessPanel);
+        setSize(new Dimension(800, 800));
         setVisible(true);
         pack();
         repaint();

@@ -82,25 +82,36 @@ class ScoreHandler extends FileHandler
             for(int i = 0; i < fileLines.size(); i++)
             {
                 String entry = fileLines.get(i);
-                System.out.println(entry);
+                // only allows lines which can be split into 3 sections and with 2nd & 3rd word as integer format
                 String[] entity= entry.split(" ");
-                System.out.println(entity);
-                scores.add(new PlayerScore(entry));
+                if (entity.length == 3)
+                {
+                    try
+                    {
+                        Integer.parseInt(entity[1]);
+                        Integer.parseInt(entity[2]);
+                        scores.add(new PlayerScore(entry));
+                    }
+                    catch (NumberFormatException ignore){}
+                }
             }
         }
     }
 
     void writeScores()
     {
+        String out = "";
         for (Iterator<PlayerScore> it = scores.iterator(); it.hasNext();)
         {
             PlayerScore next = it.next();
-            if (next != scores.last())
-            {
-                writeLine(next.getName() + " " + next.getScore() + " " + next.getTime(), false);
-            }
+            out += next.getName() + " " + next.getScore() + " " + next.getTime() + (next != scores.last()? "\n" : "");
         }
-        writeLine(scores.last().getName() + " " + scores.last().getScore() + " " + scores.last().getTime(), true);
+        writeLine(out, true);
+    }
+
+    void addScore(PlayerScore score)
+    {
+        scores.add(score);
     }
 
     TreeSet<PlayerScore> getScores() {

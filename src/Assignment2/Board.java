@@ -13,6 +13,7 @@ public class Board {
     Player playersTurn;
     Player opponent;
     private HashSet<Coord> movingPiecesMoves;
+    private HashSet<Coord> availablePiecesToMove;
     private LinkedList<Board> previousBoardStates = new LinkedList<>();
     private Tile movingTile;
     private Piece movingPiece;
@@ -33,6 +34,7 @@ public class Board {
                 board[i][j] = tile;
             }
         }
+        availablePiecesToMove = new HashSet<>();
         switch (teamCol)
         {
             case "white":
@@ -47,6 +49,10 @@ public class Board {
                 p1 = new HumanPlayer(BLACK, P1, this);
                 p2 = op.equals("human")? new HumanPlayer(WHITE, P2, this):
                         new AIPlayer(WHITE, P2, this);
+                if (!(op.equals("human")))
+                {
+                    p2 = new AIPlayer(WHITE, P2, this);
+                }
                 playersTurn = p2;
                 opponent = p1;
                 break;
@@ -54,6 +60,11 @@ public class Board {
         p1.setName(name);
         p2.setName("Player 2");
         this.ui = ui;
+        if (p2 instanceof AIPlayer && playersTurn == p2)
+        {
+            ((AIPlayer) p2).makeMove();
+        }
+        else availablePiecesToMove = playersTurn.getAvailableMovingPiecesCoords();
 
 //        Queen test1 = new Queen(new Coord(3,3), P2, p2.colour);
 //        p2.addPiece(test1);
@@ -148,6 +159,7 @@ public class Board {
                 this.board[i][j] = tile;
             }
         }
+        availablePiecesToMove = new HashSet<>();
         p1 = new HumanPlayer(board.getP1(), this);
         p2 = (board.p2.isHuman())? new HumanPlayer(board.getP2(), this):
                 new AIPlayer((AIPlayer) board.getP2(), this);
@@ -155,11 +167,16 @@ public class Board {
         {
             playersTurn = p1;
             opponent = p2;
+            availablePiecesToMove.addAll(p1.getAvailableMovingPiecesCoords());
         }
         else
         {
             playersTurn = p2;
             opponent = p1;
+            if (p2 instanceof HumanPlayer)
+            {
+                availablePiecesToMove.addAll(p2.getAvailableMovingPiecesCoords());
+            }
         }
     }
 
@@ -208,6 +225,7 @@ public class Board {
         if (!aiMakingMove) {
             clearColouredTiles();
         }
+        availablePiecesToMove = new HashSet<>();
 
         // adds copy board to previous moves for move reverting (mainly used for ai/debugging)
         previousBoardStates.push(new Board(this));
@@ -221,6 +239,7 @@ public class Board {
         Player temp = playersTurn;
         playersTurn = opponent;
         opponent = temp;
+        if (playersTurn instanceof HumanPlayer) availablePiecesToMove.addAll(getPlayersTurn().getAvailableMovingPiecesCoords());
 
         if (playersTurn == p1 && !aiMakingMove) ((HumanPlayer) p1).startTime();
 
@@ -395,6 +414,10 @@ public class Board {
     Player getWinner()
     {
         return winner;
+    }
+
+    public HashSet<Coord> getAvailablePiecesToMove() {
+        return availablePiecesToMove;
     }
 
     @Override

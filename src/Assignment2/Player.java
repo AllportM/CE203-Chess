@@ -300,6 +300,19 @@ abstract class Player
         return moves;
     }
 
+    public HashSet<Coord> getAvailableMovingPiecesCoords()
+    {
+        HashSet<Coord> moves = new HashSet<>();
+        for (Piece piece: getPlayerPieces())
+        {
+            if (getPieceMoves(piece).size() > 0)
+            {
+                moves.add(piece.getPosition());
+            }
+        }
+        return moves;
+    }
+
     boolean outOfMoves()
     {
         HashSet<Coord> moves = new HashSet<>();
@@ -585,6 +598,11 @@ class AIPlayer extends Player
     AIPlayer(AIPlayer player, Board board)
     {
         super(player, board);
+    }
+
+    public void makeMove()
+    {
+        makeMove(new Tile(new Coord(0,0)));
     }
 
     // Polymorphism, changes the AI's behaviour of inherited makeMove for dynamic binding
