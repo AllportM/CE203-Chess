@@ -645,8 +645,7 @@ class AIPlayer extends Player
         TreeSet<PointsAndMoves> scores = new TreeSet<>();
         int temp;
         Player player = b.getPlayersTurn();
-        if (depth == difficulty && player == b.getP1()) return returnAIBoardEval(b);
-        if (depth == difficulty && player == b.getP2()) return returnAIBoardEval(b);
+        if (depth == difficulty) return returnAIBoardEval(b);
         if (player == b.getP2()) temp = Integer.MIN_VALUE;
         else temp = Integer.MAX_VALUE;
 

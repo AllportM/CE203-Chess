@@ -257,7 +257,17 @@ public class Board {
                 winner = null;
                 gameOver = true;
             }
+            if (winner != null)
+            {
+                if (winner == p1) ((HumanPlayer) p1).setWinStatus(WINNER);
+                else ((HumanPlayer) p1).setWinStatus(null);
+            }
+            else ((HumanPlayer) p1).setWinStatus(STALEMATE);
             if (!aiMakingMove) ui.initWinner();
+        }
+        else if (playersTurn instanceof AIPlayer && !aiMakingMove)
+        {
+            ((AIPlayer) playersTurn).makeMove();
         }
 
 //        System.out.println("MOVED " + getTile(4, 7));
@@ -329,7 +339,11 @@ public class Board {
         }
         gameOver = previous.gameOver;
         winner = null;
-        if (!!aiMakingMove) ui.repaint();
+        if (!!aiMakingMove)
+        {
+            clearColouredTiles();
+            ui.repaint();
+        }
     }
 
 

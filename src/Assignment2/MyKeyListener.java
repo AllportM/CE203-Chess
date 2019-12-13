@@ -30,129 +30,131 @@ class MyKeyListener extends KeyAdapter {
     }
 
     @Override
-    public void keyPressed(KeyEvent e) {
+    public void keyPressed(KeyEvent e)
+    {
         super.keyPressed(e);
         int pressed = e.getExtendedKeyCode();
-        switch(pressed)
+        if (board.playersTurn instanceof HumanPlayer)
         {
-            case UP:
-            case LEFT:
-                if (!board.getPlayersTurn().isMoving())
-                {
-                    if (index == null)
+            switch (pressed) {
+                case UP:
+                case LEFT:
+                    if (!board.getPlayersTurn().isMoving())
                     {
-                        moves = new ArrayList<>();
-                        moves.addAll(board.getAvailablePiecesToMove());
-                        Collections.sort(moves);
-                        index = moves.size() -1;
-                        board.clearColouredTiles();
-                        board.getTile(moves.get(index)).setColourMovePiece();
-                    }
-                    else
-                    {
-                        index--;
-                        forward = false;
-                        index = (index < 0) ? moves.size() - 1 : index;
-                        board.clearColouredTiles();
-                        board.getTile(moves.get(index)).setColourMovePiece();
-                    }
+                        if (index == null)
+                        {
+                            moves = new ArrayList<>();
+                            moves.addAll(board.getAvailablePiecesToMove());
+                            Collections.sort(moves);
+                            index = moves.size() - 1;
+                            board.clearColouredTiles();
+                            board.getTile(moves.get(index)).setColourMovePiece();
+                        }
+                        else
+                        {
+                            index--;
+                            forward = false;
+                            index = (index < 0) ? moves.size() - 1 : index;
+                            board.clearColouredTiles();
+                            board.getTile(moves.get(index)).setColourMovePiece();
+                        }
 
-                }
-                else
-                {
-                    if (index == null)
+                    } else {
+                        if (index == null)
+                        {
+                            moves = new ArrayList<>();
+                            moves.addAll(board.getMovingPiecesMoves());
+                            Collections.sort(moves);
+                            index = moves.size() - 1;
+                            Tile move = board.getTile(moves.get(index));
+                            if (move.isOccupied())
+                                move.setColourHostile();
+                            else move.setColourMovePiece();
+                        }
+                        else
+                        {
+                            index--;
+                            forward = false;
+                            index = (index < 0) ? moves.size() - 1 : index;
+                            Tile move = board.getTile(moves.get(index));
+                            if (move.isOccupied())
+                                move.setColourHostile();
+                            else move.setColourMovePiece();
+                        }
+                    }
+                    break;
+                case DOWN:
+                case RIGHT:
+                    if (!board.getPlayersTurn().isMoving())
                     {
-                        moves = new ArrayList<>();
-                        moves.addAll(board.getMovingPiecesMoves());
-                        Collections.sort(moves);
-                        forward = false;
-                        index = moves.size() -1;
-                        board.clearColouredTiles();
-                        Tile move = board.getTile(moves.get(index));
-                        if (move.isOccupied()) move.setColourHostile();
-                        else move.setColourMoving();
+                        if (index == null)
+                        {
+                            moves = new ArrayList<>();
+                            moves.addAll(board.getAvailablePiecesToMove());
+                            Collections.sort(moves);
+                            index = 0;
+                            board.clearColouredTiles();
+                            board.getTile(moves.get(index)).setColourMovePiece();
+                        }
+                        else
+                        {
+                            index++;
+                            index = (index > moves.size() - 1) ? 0 : index;
+                            board.clearColouredTiles();
+                            board.getTile(moves.get(index)).setColourMovePiece();
+                        }
                     }
                     else
                     {
-                        index--;
-                        forward = false;
-                        index = (index < 0) ? moves.size() - 1 : index;
-                        board.clearColouredTiles();
-                        Tile move = board.getTile(moves.get(index));
-                        if (move.isOccupied()) move.setColourHostile();
-                        else move.setColourMoving();
+                        if (index == null)
+                        {
+                            setPlayersTurnMoves();
+                        } else
+                            {
+                            index++;
+                            index = (index > moves.size() - 1) ? 0 : index;
+                            Tile move = board.getTile(moves.get(index));
+                            if (move.isOccupied())
+                                move.setColourHostile();
+                            else move.setColourMovePiece();
+                        }
                     }
-                }
-                break;
-            case DOWN:
-            case RIGHT:
-                if (!board.getPlayersTurn().isMoving())
-                {
-                    if (index == null)
+                    break;
+                case ENTER:
+                    if (!(index == null))
                     {
-                        moves = new ArrayList<>();
-                        moves.addAll(board.getAvailablePiecesToMove());
-                        Collections.sort(moves);
-                        index = 0;
-                        forward = true;
-                        board.clearColouredTiles();
-                        board.getTile(moves.get(index)).setColourMovePiece();
+                        if (board.playersTurn.isMoving())
+                        {
+                            board.makeMove(moves.get(index));
+                            index = null;
+                        }
+                        else
+                        {
+                            board.considerMove(moves.get(index));
+                            setPlayersTurnMoves();
+                        }
                     }
-                    else
-                    {
-                        index++;
-                        forward = true;
-                        index = (index > moves.size() - 1) ? 0 : index;
-                        board.clearColouredTiles();
-                        board.getTile(moves.get(index)).setColourMovePiece();
-                    }
-                }
-                else
-                {
-                    if (index == null)
-                    {
-                        moves = new ArrayList<>();
-                        moves.addAll(board.getMovingPiecesMoves());
-                        Collections.sort(moves);
-                        forward = true;
-                        index = 0;
-                        Tile move = board.getTile(moves.get(index));
-                        if (move.isOccupied()) move.setColourHostile();
-                        else move.setColourMoving();
-                    }
-                    else
-                    {
-                        if (!forward) index += 1;
-                        index++;
-                        forward = true;
-                        index = (index > moves.size() - 1) ? 0 : index;
-                        board.clearColouredTiles();
-                        Tile move = board.getTile(moves.get(index));
-                        if (move.isOccupied()) move.setColourHostile();
-                        else move.setColourMoving();
-                    }
-                }
-                break;
-            case ENTER:
-                if (!(index == null))
-                {
-                    if (board.playersTurn.isMoving())
-                    {
-                        board.makeMove(moves.get(index));
-                        index = null;
-                    }
-                    else
-                    {
-                        board.considerMove(moves.get(index));
-                        index = null;
-                        board.clearColouredTiles();
-                    }
-                }
-                break;
-            case ESCAPE:
-                index = null;
-                break;
+                    break;
+                case ESCAPE:
+                    index = null;
+                    board.clearColouredTiles();
+                    if (board.getPlayersTurn().isMoving()) board.makeMove(board.getMovingTile().getTileCoord());
+                    break;
+            }
         }
+    }
+
+    private void setPlayersTurnMoves() {
+        moves = new ArrayList<>();
+        moves.addAll(board.getMovingPiecesMoves());
+        Collections.sort(moves);
+        index = 0;
+        Tile move = board.getTile(moves.get(index));
+        if (move.isOccupied())
+            move.setColourHostile();
+        else if (!move.getTileCoord().equals(board.getMovingPiece().getPosition()))
+            move.setColourMoving();
+        else move.setColourMovePiece();
     }
 
     void clearIndex()
