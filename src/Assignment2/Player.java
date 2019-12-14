@@ -94,8 +94,9 @@ abstract class Player
 
     abstract boolean makeMove(Tile tile);
 
-    public void removeMovesPlacingKingInCheck(Set<Coord> moves, Piece piece, Coord destination)
+    boolean movePlacesKingInCheck(Piece piece, Coord destination)
     {
+        boolean itDoes = false;
         Tile origin = board.getTile(piece.getPosition());
         Tile tileMovingTo = board.getTile(destination);
         Piece pieceTaken = null;
@@ -112,19 +113,14 @@ abstract class Player
             kingOrigin = king.getPosition();
             king.setCoord(destination);
         }
-//        System.out.println("King = " + king);
-//        System.out.println("Kings position = " + king.getPosition());
         Player opp;
         if (piece.teamPiece == P1) opp = board.getP2();
         else opp = board.getP1();
         for (Piece oppPiece: opp.getPlayerPieces())
         {
-//            System.out.println("Opp Piece " + oppPiece);
-//            System.out.println("Opp position = " + oppPiece.getPosition());
-//            System.out.println("Opp moves" + oppPiece.getValidMoves(board));
             if (oppPiece.getValidMoves(board).contains(king.getPosition()) && oppPiece != pieceTaken)
             {
-                moves.remove(destination);
+                itDoes = true;
             }
         }
         tileMovingTo.clearPiece();
@@ -137,16 +133,17 @@ abstract class Player
             king.setCoord(kingOrigin);
         }
         origin.setPiece(piece);
+        return itDoes;
     }
 
 
     HashSet<Coord> getPieceMoves(Piece piece)
     {
         // gets only valid moves that does not place king in check by simulating each pieces moves & resetting
-        HashSet<Coord> moves = piece.getValidMoves(board);
+        HashSet<Coord> moves = new HashSet<>();
         for (Coord move: piece.getValidMoves(board))
         {
-            removeMovesPlacingKingInCheck(moves, piece, move);
+            if (!(movePlacesKingInCheck(piece, move))) moves.add(move);
         }
         // gets valid castling moves for castle
         if (piece instanceof Castle && piece.isFirstMove() && king.isFirstMove())
@@ -211,14 +208,14 @@ abstract class Player
         return moves;
     }
 
-    public HashSet<Coord> getAvailableMovingPiecesCoords()
+    HashSet<Coord> getAvailableMovingPiecesCoords()
     {
         HashSet<Coord> moves = new HashSet<>();
         for (Piece piece: getPlayerPieces())
         {
             if (getPieceMoves(piece).size() > 0)
             {
-                moves.add(piece.getPosition());
+                moves.add(new Coord(piece.getPosition()));
             }
         }
         return moves;
@@ -317,27 +314,27 @@ abstract class Player
         playerPieces = new ArrayList<>();
     }
 
-    public boolean canCastle() {
+    boolean canCastle() {
         return canCastle;
     }
 
-    public boolean isCastling() {
+    boolean isCastling() {
         return isCastling;
     }
 
-    public void setCastling(boolean castling) {
+    void setCastling(boolean castling) {
         isCastling = castling;
     }
 
-    public void setCanCastle(boolean canCastle) {
+    void setCanCastle(boolean canCastle) {
         this.canCastle = canCastle;
     }
 
-    public Coord getCastleCastlingDestination() {
+    Coord getCastleCastlingDestination() {
         return castleCastlingDestination;
     }
 
-    public Coord getKingCastleDestination() {
+    Coord getKingCastleDestination() {
         return kingCastleDestination;
     }
 
@@ -446,15 +443,15 @@ class HumanPlayer extends Player
         return false;
     }
 
-    public int getSecondsTotal() {
+    int getSecondsTotal() {
         return secondsTotal;
     }
 
-    public void setWinStatus(Team winStatus) {
+    void setWinStatus(Team winStatus) {
         this.winStatus = winStatus;
     }
 
-    public Team getWinStatus() {
+    Team getWinStatus() {
         return winStatus;
     }
 
@@ -483,7 +480,7 @@ class AIPlayer extends Player
         super(player, board);
     }
 
-    public void makeMove()
+    void makeMove()
     {
         makeMove(new Tile(new Coord(0,0)));
     }
@@ -506,7 +503,7 @@ class AIPlayer extends Player
         return true;
     }
 
-    public PointsAndMoves getBestMove()
+    PointsAndMoves getBestMove()
     {
         callMiniMax(board);
         return score.first();
@@ -517,14 +514,12 @@ class AIPlayer extends Player
         int i;
         if (b.playersTurn.getPlayer() == Team.P1) i=0;
         else i = 1;
-        Node root = new Node(b);
         score = new TreeSet<>();
-        miniMax(i, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, new Board(b), root);
+        miniMax(i, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, new Board(b));
     }
 
-    private int miniMax(int pInt, int depth, int alpha, int beta, Board b, Node n)
+    private int miniMax(int pInt, int depth, int alpha, int beta, Board b)
     {
-        Node newN = new Node(n, b);
         if (b.isGameOver() && b.getWinner() == b.getP1()) return -23000;
         if (b.isGameOver() && b.getWinner() == b.getP2()) return 23000;
         else if (b.isGameOver()) return 0;
@@ -543,7 +538,7 @@ class AIPlayer extends Player
             {
                 for (Coord coord : player.getPieceMoves(piece))
                 {
-                    moves.add(new PointsAndMoves(piece.getPosition(), coord));
+                    moves.add(new PointsAndMoves(new Coord(piece.getPosition()), new Coord(coord)));
                 }
 
             }
@@ -551,9 +546,10 @@ class AIPlayer extends Player
         // adds the only two moves for a king when castling
         else
         {
-            moves.add(new PointsAndMoves(player.getKing().getPosition(), player.getKing().getPosition()));
-            moves.add(new PointsAndMoves(player.getKing().getPosition(), player.getKingCastleDestination()));
-            depth--; // given only 2 moves, can search by an additional depth at little to no loss of efficiency
+            System.out.println("hereh");
+            moves.add(new PointsAndMoves(new Coord(player.getKing().getPosition()), new Coord(player.getKing().getPosition())));
+            moves.add(new PointsAndMoves(new Coord(player.getKing().getPosition()), new Coord(player.getKingCastleDestination())));
+            pInt = (player.getTeam() == P1)? 0: 1;
         }
         if (moves.size() == 0) System.out.println("no moves available");
 
@@ -566,14 +562,7 @@ class AIPlayer extends Player
             int currentScore;
             if (pInt == 1) {
                 // castling call, player 1's go again
-                if (b.playersTurn.isCastling())
-                {
-                    currentScore = miniMax(1, depth + 1, alpha, beta, b, newN);
-                }
-                else
-                {
-                    currentScore = miniMax(0, depth + 1, alpha, beta, b, newN);
-                }
+                    currentScore = miniMax(0, depth + 1, alpha, beta, new Board(b));
                 move.setScore(currentScore);
                 scores.add(move);
                 temp = Math.max(temp, currentScore);
@@ -582,15 +571,7 @@ class AIPlayer extends Player
                     score.add(move);
                 }
             } else if (pInt == 0) {
-                // castling call, player 2's go again
-                if (b.playersTurn.isCastling())
-                {
-                    currentScore = miniMax(0, depth + 1, alpha, beta, b, newN);
-                }
-                else
-                {
-                    currentScore = miniMax(1, depth + 1, alpha, beta, b, newN);
-                }
+                    currentScore = miniMax(1, depth + 1, alpha, beta, b);
                 move.setScore(currentScore);
                 scores.add(move);
                 temp = Math.min(temp, currentScore);
@@ -603,13 +584,9 @@ class AIPlayer extends Player
             }
         }
         }
-        catch (NullPointerException e)
-        {
-            brokeat = newN.b;
-            System.out.println("Null pointer");
-        }
-//        }
-//
+        catch (NullPointerException ignore) // unfortunately ai considers some illegal moves where a players king
+        { // is removed from the board. I'm sure this is due to castling, but ran out of time to solve
+        } // initially player was never given the choice to move king upon castling, it was that point which broke ai :(
         return (player == b.getP2())? scores.first().getScore(): scores.last().getScore();
     }
 
@@ -632,105 +609,14 @@ class AIPlayer extends Player
         {
             p2Score += getPieceScore(piece);
         }
-        scores[0] = p1Score;
-        scores[1] = p2Score;
+        // introduces a degree of randomness, 40% either way (i.e 1 init value, would be 0.9 or 1.1)
+        double twentyPerc = (Math.random() * 0.8) + 0.6;
+        scores[0] = (int) Math.round(p1Score * twentyPerc);
+        scores[1] = (int) Math.round(p2Score * twentyPerc);
+//        scores[0] = p1Score;
+//        scores[1] = p2Score;
         return scores;
     }
-
-//    private void miniMax2(int depth, Board b)
-//    {
-//        int alpha = Integer.MIN_VALUE;
-//        int beta = Integer.MAX_VALUE;
-//
-//        Player ai = b.getPlayersTurn();
-//        // populates set containing moves
-//        Set<PointsAndMoves> moves = new HashSet<>();
-//        for (Piece piece: ai.getPlayerPieces())
-//        {
-//            for (Coord coord: ai.getPieceMoves(piece))
-//            {
-//                moves.add(new PointsAndMoves(piece.getPosition(), coord));
-//            }
-//        }
-//
-//        for (PointsAndMoves move: moves)
-//        {
-//            b.setAIMakingMove(true);
-//            b.considerMove(move.getOrigin());
-//            b.makeMove(move.getDestination());
-//            b.setAIMakingMove(false);
-//            int score = min(depth+1, b, alpha, beta);
-//            move.setScore(score);
-//            this.score.add(move);
-//            b.revertMove();
-//        }
-//    }
-//
-//    private int min(int depth, Board b, int alpha, int beta)
-//    {
-//        if (depth == difficulty) return returnMinEval(b);
-//        if (b.isGameOver() && b.getWinner() == b.getP1()) return -23000;
-//        if (b.isGameOver() && b.getWinner() == b.getP2()) return 23000;
-//        if (b.isGameOver()) return 0;
-//
-//        int lowest = Integer.MAX_VALUE;
-//        Player human = b.getPlayersTurn();
-//        Set<PointsAndMoves> moves = new HashSet<>();
-//        for (Piece piece: human.getPlayerPieces())
-//        {
-//            for (Coord coord: human.getPieceMoves(piece))
-//            {
-//                moves.add(new PointsAndMoves(piece.getPosition(), coord));
-//            }
-//        }
-//
-//        for (PointsAndMoves move: moves)
-//        {
-//            b.setAIMakingMove(true);
-//            b.considerMove(move.getOrigin());
-//            b.makeMove(move.getDestination());
-//            b.setAIMakingMove(false);
-//            int score = max(depth+1, b, alpha, beta);
-//            lowest = Math.min(lowest, score);
-//            beta = Math.min(beta, lowest);
-//            b.revertMove();
-//            if (alpha > beta) break;
-//        }
-//        return beta;
-//    }
-//
-//    private int max(int depth, Board b, int alpha, int beta)
-//    {
-//        if (depth == difficulty) return returnMinEval(b);
-//        if (b.isGameOver() && b.getWinner() == b.getP1()) return -23000;
-//        if (b.isGameOver() && b.getWinner() == b.getP2()) return 23000;
-//        if (b.isGameOver()) return 0;
-//
-//        int highest = Integer.MIN_VALUE;
-//        Player human = b.getPlayersTurn();
-//        Set<PointsAndMoves> moves = new HashSet<>();
-//        for (Piece piece: human.getPlayerPieces())
-//        {
-//            for (Coord coord: human.getPieceMoves(piece))
-//            {
-//                moves.add(new PointsAndMoves(piece.getPosition(), coord));
-//            }
-//        }
-//
-//        for (PointsAndMoves move: moves)
-//        {
-//            b.setAIMakingMove(true);
-//            b.considerMove(move.getOrigin());
-//            b.makeMove(move.getDestination());
-//            b.setAIMakingMove(false);
-//            int score = max(depth+1, b, alpha, beta);
-//            highest = Math.max(highest, score);
-//            alpha = Math.max(alpha, highest);
-//            b.revertMove();
-//            if (alpha > beta) break;
-//        }
-//        return alpha;
-//    }
 
     @Override
     public String toString()

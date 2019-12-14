@@ -30,6 +30,12 @@ public class ButtonHandler implements ActionListener {
         if (e.getSource() == app.getMenu().getRevert() && app.chessBoard.getPreviousBoardStates().size() > 0)
         {
             app.chessBoard.revertMove();
+            app.chessBoard.clearColouredTiles();
+            app.repaint();
+        }
+        if (e.getSource() == app.getMenu().getHighScores())
+        {
+            app.initWinner();
         }
         if (e.getSource() instanceof JButton && ((JButton) e.getSource()).getText() == "Close")
         {

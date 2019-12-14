@@ -22,13 +22,13 @@ class PlayerScore implements Comparable<PlayerScore>{
         time = ((HumanPlayer) p1).getSecondsTotal();
         int winner = (((HumanPlayer) p1).getWinStatus() == WINNER)? 2:
                 ((HumanPlayer) p1).getWinStatus() == STALEMATE? 1: 0;
-        // Average chess game takes approx 40 moves [1], on the basis of 20 seconds per move and 20,000 points for this
-        // duration 8000000/(20*20) == 20,000 points. so 8000000/time taken = score. *1 for stalemate, * 2 for win
+        // Average chess game takes approx 40 moves [1], on the basis of 10 seconds per move and 2,000 points for this
+        // duration 400000/(20*10) == 2,000 points. so 400000/time taken = score. *1 for stalemate, * 2 for win
         // [1]"Chess Statistics", Chessgames.com, 2019. [Online].
         // Available: https://www.chessgames.com/chessstats.html. [Accessed: 12- Dec- 2019].
         try {
-            score = (8000000 / (time / 1000)) * winner;
-        }catch(ArithmeticException e){score = (8000000 / (20*20)) * winner;}
+            score = (400000 / (time / 1000)) * winner;
+        }catch(ArithmeticException e){score = (400000 / (20*10)) * winner;}
     }
 
     String getScore() {

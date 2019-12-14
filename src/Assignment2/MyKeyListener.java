@@ -67,9 +67,7 @@ class MyKeyListener extends KeyAdapter {
                             Collections.sort(moves);
                             index = moves.size() - 1;
                             Tile move = board.getTile(moves.get(index));
-                            if (move.isOccupied())
-                                move.setColourHostile();
-                            else move.setColourMovePiece();
+                            move.setColourMovePiece();
                             board.getUi().repaint();
                         }
                         else
@@ -79,9 +77,7 @@ class MyKeyListener extends KeyAdapter {
                             forward = false;
                             index = (index < 0) ? moves.size() - 1 : index;
                             Tile move = board.getTile(moves.get(index));
-                            if (move.isOccupied())
-                                move.setColourHostile();
-                            else move.setColourMovePiece();
+                            move.setColourMovePiece();
                             board.getUi().repaint();
                         }
                     }
@@ -118,10 +114,8 @@ class MyKeyListener extends KeyAdapter {
                             index++;
                             index = (index > moves.size() - 1) ? 0 : index;
                             Tile move = board.getTile(moves.get(index));
-                            if (move.isOccupied())
-                                move.setColourHostile();
-                            else move.setColourMovePiece();
-                                board.getUi().repaint();
+                            move.setColourMovePiece();
+                            board.getUi().repaint();
                         }
                     }
                     break;
@@ -155,9 +149,7 @@ class MyKeyListener extends KeyAdapter {
         Collections.sort(moves);
         index = 0;
         Tile move = board.getTile(moves.get(index));
-        if (move.isOccupied())
-            move.setColourHostile();
-        else move.setColourMovePiece();
+        move.setColourMovePiece();
         board.getUi().repaint();
     }
 

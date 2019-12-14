@@ -10,6 +10,12 @@ public class Coord implements Comparable<Coord>{
         this.y = y;
     }
 
+    public Coord(Coord pos)
+    {
+        x = pos.x;
+        y = pos.y;
+    }
+
     @Override
     public String toString()
     {
