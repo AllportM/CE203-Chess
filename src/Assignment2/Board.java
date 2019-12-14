@@ -71,7 +71,7 @@ public class Board {
 //        board[3][3].setPiece(test1);
 //        Board testboard = new Board(this);
 //        System.out.println(testboard.getPlayersTurn());
-        // test stalemate move white move first
+//         test stalemate move white move first
 //        p1.clearPlayerPieces();
 //        p2.clearPlayerPieces();
 //        for (int i = 0; i < board.length; i++)
@@ -85,10 +85,10 @@ public class Board {
 //        King king = new King(new Coord(4, 7), p1.getPlayer(), WHITE);
 //        board[7][4].setPiece(king);
 //        p1.getPlayerPieces().add(king);
-//        p1.setKing(king);
+//        p1.king = (king);
 //        King kingB = new King(new Coord(4,0), p2.getPlayer(), BLACK);
 //        p2.getPlayerPieces().add(kingB);
-//        p2.setKing(kingB);
+//        p2.king = (kingB);
 //        board[0][4].setPiece(kingB);
 //        Castle p2Castle = new Castle(new Coord(7,0), p2.getPlayer(), BLACK);
 //        board[0][7].setPiece(p2Castle);
@@ -105,21 +105,7 @@ public class Board {
 //        Castle p1Castle = new Castle(new Coord(3, 6), p1.getPlayer(), WHITE);
 //        p1.getPlayerPieces().add(p1Castle);
 //        board[6][3].setPiece(p1Castle);
-//        generatePlayersMoves();
-//        King king = new King(new Coord(1, 2), p1.getPlayer(), WHITE);
-//        board[2][1].setPiece(king);
-//        p1.getPlayerPieces().add(king);
-//        p1.setKing(king);
-//        Castle castle = new Castle(new Coord(3, 2), p1.getPlayer(), WHITE);
-//        board[2][3].setPiece(castle);
-//        p1.getPlayerPieces().add(castle);
-//        Queen queen = new Queen(new Coord(5, 4), p1.getPlayer(), WHITE);
-//        p1.getPlayerPieces().add(queen);
-//        board[4][5].setPiece(queen);
-//        King kingB = new King(new Coord(0,0), p2.getPlayer(), BLACK);
-//        p2.getPlayerPieces().add(kingB);
-//        p2.setKing(kingB);
-//        board[0][0].setPiece(kingB);
+// a
 
                 // test stalemate black move
 //        King king = new King(new Coord(1, 2), p2.getPlayer(), BLACK);
@@ -182,7 +168,6 @@ public class Board {
 
     void considerMove(Coord origin)
     {
-        //saves move for reverting
         playersTurn.setMoving(true);
         movingTile = getTile(origin);
         movingPiece = movingTile.getTilePiece();
@@ -191,6 +176,7 @@ public class Board {
         // sets tile colours
         if (!((aiMakingMove)))
         {
+            movingPiecesMoves.add(origin);
             for (Coord move : movingPiecesMoves)
             {
                 Tile potentialMove = getTile(move);
@@ -199,38 +185,55 @@ public class Board {
                 else getTile(move.x, move.y).setColourMoving();
             }
         }
-        if (!aiMakingMove && !playersTurn.getKing().isUnderThreat()) movingPiecesMoves.add(origin);
 
         if (!aiMakingMove) {
-            movingTile.clearPiece();
             ui.repaint();
-        }
-        if (aiMakingMove) {
-            movingTile.clearPiece();
         }
        }
 
     void makeMove (Coord destination)
     {
-        playersTurn.setMoving(false);
+
         if (playersTurn == p1 && !aiMakingMove) ((HumanPlayer) p1).endTime();
         // if player replaces piece to where it came from, just replaces it
-        if (destination.equals(movingTile.getTileCoord()) && !aiMakingMove)
+        if (destination.equals(movingTile.getTileCoord()) && !aiMakingMove && !playersTurn.isCastling())
         {
             getTile(destination).setPiece(movingPiece);
             clearColouredTiles();
             ui.repaint();
+            movingPiecesMoves = new HashSet<>();
+            playersTurn.setMoving(false);
             return;
         }
-        if (!aiMakingMove) {
-            clearColouredTiles();
+        if (playersTurn.canCastle() && destination.equals(playersTurn.getCastleCastlingDestination()))
+        {
+            playersTurn.setCastling(true);
+            movingPiecesMoves = new HashSet<>();
+            movingPiecesMoves.add(playersTurn.getKing().getPosition());
+            movingPiecesMoves.add(playersTurn.getKingCastleDestination());
+            getTile(playersTurn.getKing().getPosition()).setColourMoving();
+            getTile(playersTurn.getKingCastleDestination()).setColourMoving();
+            playersTurn.movePiece(movingPiece, movingPiece.getPosition(), destination);
+            movingPiece = playersTurn.getKing();
+            movingTile = getTile(playersTurn.getKing().getPosition());
+            return;
         }
+        if (playersTurn.isCastling())
+        {
+            playersTurn.setCastling(false);
+            playersTurn.setCanCastle(false);
+        }
+        playersTurn.setMoving(false);
         availablePiecesToMove = new HashSet<>();
 
         // adds copy board to previous moves for move reverting (mainly used for ai/debugging)
         previousBoardStates.push(new Board(this));
 
+        if (!aiMakingMove) System.out.println("P1 king pos " + getP1().getKing().getPosition());
+        if (!aiMakingMove) System.out.println("P2 king pos " + getP2().getKing().getPosition());
         playersTurn.movePiece(movingPiece, movingPiece.getPosition(), destination);
+        if (!aiMakingMove) System.out.println("P1 king pos " + getP1().getKing().getPosition());
+        if (!aiMakingMove) System.out.println("P2 king pos " + getP2().getKing().getPosition());
         movingPiecesMoves = new HashSet<>();
 
 //        System.out.println("MOVED " + getTile(4, 7));
@@ -263,11 +266,21 @@ public class Board {
                 else ((HumanPlayer) p1).setWinStatus(null);
             }
             else ((HumanPlayer) p1).setWinStatus(STALEMATE);
-            if (!aiMakingMove) ui.initWinner();
+            if (!aiMakingMove)
+            {
+                System.out.println(this);
+                System.out.println("P1 king pos " + getP1().getKing().getPosition());
+                System.out.println("P2 king pos " + getP2().getKing().getPosition());
+                ui.initWinner();
+            }
         }
         else if (playersTurn instanceof AIPlayer && !aiMakingMove)
         {
             ((AIPlayer) playersTurn).makeMove();
+        }
+
+        if (!aiMakingMove) {
+            clearColouredTiles();
         }
 
 //        System.out.println("MOVED " + getTile(4, 7));
@@ -297,7 +310,8 @@ public class Board {
             }
         }
         p1 = new HumanPlayer(previous.getP1(), this);
-        p2 = new AIPlayer((AIPlayer) previous.getP2(), this);
+        if (p2.isHuman()) p2 = new HumanPlayer(previous.getP2(), this);
+        else p2 = new AIPlayer((AIPlayer) previous.getP2(), this);
         if (previous.playersTurn.getPlayer() == P1)
         {
             playersTurn = p1;
@@ -308,8 +322,12 @@ public class Board {
             playersTurn = p2;
             opponent = p1;
         }
+        p1.setMoving(false);
+        p2.setMoving(false);
+        availablePiecesToMove = playersTurn.getAvailableMovingPiecesCoords();
         gameOver = previous.gameOver;
         winner = null;
+        clearColouredTiles();
         ui.repaint();
     }
 

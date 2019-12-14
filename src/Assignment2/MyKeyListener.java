@@ -70,9 +70,11 @@ class MyKeyListener extends KeyAdapter {
                             if (move.isOccupied())
                                 move.setColourHostile();
                             else move.setColourMovePiece();
+                            board.getUi().repaint();
                         }
                         else
                         {
+                            board.getTile(moves.get(index)).setColourMoving();
                             index--;
                             forward = false;
                             index = (index < 0) ? moves.size() - 1 : index;
@@ -80,6 +82,7 @@ class MyKeyListener extends KeyAdapter {
                             if (move.isOccupied())
                                 move.setColourHostile();
                             else move.setColourMovePiece();
+                            board.getUi().repaint();
                         }
                     }
                     break;
@@ -110,13 +113,15 @@ class MyKeyListener extends KeyAdapter {
                         {
                             setPlayersTurnMoves();
                         } else
-                            {
+                        {
+                            board.getTile(moves.get(index)).setColourMoving();
                             index++;
                             index = (index > moves.size() - 1) ? 0 : index;
                             Tile move = board.getTile(moves.get(index));
                             if (move.isOccupied())
                                 move.setColourHostile();
                             else move.setColourMovePiece();
+                                board.getUi().repaint();
                         }
                     }
                     break;
@@ -152,9 +157,8 @@ class MyKeyListener extends KeyAdapter {
         Tile move = board.getTile(moves.get(index));
         if (move.isOccupied())
             move.setColourHostile();
-        else if (!move.getTileCoord().equals(board.getMovingPiece().getPosition()))
-            move.setColourMoving();
         else move.setColourMovePiece();
+        board.getUi().repaint();
     }
 
     void clearIndex()

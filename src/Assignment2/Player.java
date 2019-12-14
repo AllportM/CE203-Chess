@@ -17,7 +17,10 @@ abstract class Player
     King king;
     boolean moving = false;
     Board board;
-    private boolean castled = false;
+    private boolean isCastling = false;
+    private boolean canCastle = false;
+    private Coord kingCastleDestination;
+    private Coord castleCastlingDestination;
 
     Player(Team colour, Team player, Board board)
     {
@@ -93,7 +96,7 @@ abstract class Player
 
     public void removeMovesPlacingKingInCheck(Set<Coord> moves, Piece piece, Coord destination)
     {
-
+        Tile origin = board.getTile(piece.getPosition());
         Tile tileMovingTo = board.getTile(destination);
         Piece pieceTaken = null;
         if (tileMovingTo.isOccupied())
@@ -101,6 +104,7 @@ abstract class Player
             pieceTaken = tileMovingTo.getTilePiece();
             tileMovingTo.clearPiece();
         }
+        origin.clearPiece();
         tileMovingTo.setPiece(piece);
         Coord kingOrigin = null;
         if (piece instanceof King)
@@ -108,8 +112,16 @@ abstract class Player
             kingOrigin = king.getPosition();
             king.setCoord(destination);
         }
-        for (Piece oppPiece: board.getOpponent().getPlayerPieces())
+//        System.out.println("King = " + king);
+//        System.out.println("Kings position = " + king.getPosition());
+        Player opp;
+        if (piece.teamPiece == P1) opp = board.getP2();
+        else opp = board.getP1();
+        for (Piece oppPiece: opp.getPlayerPieces())
         {
+//            System.out.println("Opp Piece " + oppPiece);
+//            System.out.println("Opp position = " + oppPiece.getPosition());
+//            System.out.println("Opp moves" + oppPiece.getValidMoves(board));
             if (oppPiece.getValidMoves(board).contains(king.getPosition()) && oppPiece != pieceTaken)
             {
                 moves.remove(destination);
@@ -124,6 +136,7 @@ abstract class Player
         {
             king.setCoord(kingOrigin);
         }
+        origin.setPiece(piece);
     }
 
 
@@ -131,14 +144,12 @@ abstract class Player
     {
         // gets only valid moves that does not place king in check by simulating each pieces moves & resetting
         HashSet<Coord> moves = piece.getValidMoves(board);
-        Tile origin = board.getTile(piece.getPosition());
-        origin.clearPiece();
         for (Coord move: piece.getValidMoves(board))
         {
             removeMovesPlacingKingInCheck(moves, piece, move);
         }
         // gets valid castling moves for castle
-        if (piece instanceof Castle && piece.isFirstMove() && king.isFirstMove() && !castled)
+        if (piece instanceof Castle && piece.isFirstMove() && king.isFirstMove())
         {
             Coord originCoord = piece.getPosition();
             switch (getTeam())
@@ -148,13 +159,25 @@ abstract class Player
                             || board.getTile(2, 7).isOccupied() || board.getTile(3, 7).isOccupied()))
                     {
                         Coord move = new Coord(3, 7);
-                        if (!(kingsCastleMoveBlocked(move))) moves.add(move);
+                        if (!(kingsCastleMoveBlocked(move)))
+                        {
+                            moves.add(move);
+                            canCastle = true;
+                            castleCastlingDestination = move;
+                            kingCastleDestination = new Coord(2, 7);
+                        }
                     }
                     if (originCoord.x == 7 && originCoord.y == 7 && !(board.getTile(5, 7).isOccupied()
                             || board.getTile(6, 7).isOccupied()))
                     {
                         Coord move = new Coord(5, 7);
-                        if (!(kingsCastleMoveBlocked(move))) moves.add(move);
+                        if (!(kingsCastleMoveBlocked(move)))
+                        {
+                            moves.add(move);
+                            canCastle = true;
+                            castleCastlingDestination = move;
+                            kingCastleDestination = new Coord(6, 7);
+                        }
                     }
                     break;
                 case P2:
@@ -162,141 +185,29 @@ abstract class Player
                             || board.getTile(2, 0).isOccupied() || board.getTile(3, 0).isOccupied()))
                     {
                         Coord move = new Coord(3, 0);
-                        if (!(kingsCastleMoveBlocked(move))) moves.add(move);
+                        if (!(kingsCastleMoveBlocked(move)))
+                        {
+                            moves.add(move);
+                            canCastle = true;
+                            castleCastlingDestination = move;
+                            kingCastleDestination = new Coord(2, 0);
+                        }
                     }
                     if (originCoord.x == 7 && originCoord.y == 0 && board.getP2().getKing().isFirstMove()
                             && !(board.getTile(5, 0).isOccupied() || board.getTile(6, 0).isOccupied()))
                     {
                         Coord move = new Coord(5, 0);
-                        if (!(kingsCastleMoveBlocked(move))) moves.add(move);
+                        if (!(kingsCastleMoveBlocked(move)))
+                        {
+                            moves.add(move);
+                            canCastle = true;
+                            castleCastlingDestination = move;
+                            kingCastleDestination = new Coord(6, 0);
+                        }
                     }
                     break;
             }
         }
-        origin.setPiece(piece);
-        // checks valid castling moves using same method as above, but placing king in castled move
-//        if (piece instanceof King)
-//        {
-//            if (king.isUnderThreat())
-//            {
-//                board.getTile(piece.getPosition()).clearPiece();
-//                board.getTile(king.getAttacker().getPosition()).clearPiece();
-//                board.getTile(king.getAttacker().getPosition()).setPiece(king);
-//                boolean placesUnderThreat = false;
-//                for (Piece oppPiece: board.getOpponent().getPlayerPieces())
-//                {
-//                    placesUnderThreat = oppPiece.getValidMoves(board).contains(piece.getPosition()) || placesUnderThreat;
-//                }
-//                if (!placesUnderThreat) moves.add(king.getAttacker().getPosition());
-//                board.getTile(piece.getPosition()).setPiece(piece);
-//                board.getTile(king.getAttacker().getPosition()).setPiece(king.getAttacker());
-//            }
-//            else // stores all valid king moves in moves by checking oppositions available moves and removing them
-//            {
-//                moves.addAll(piece.getValidMoves(board));
-//                for (Coord move: piece.getValidMoves(board))
-//                {
-//                    board.getTile(piece.getPosition()).clearPiece();
-//                    board.getTile(move).setPiece(piece);
-//                    boolean placesUnderThreat = false;
-//                    for (Piece oppPiece : board.getOpponent().getPlayerPieces())
-//                    {
-//                        placesUnderThreat = oppPiece.getValidMoves(board).contains(piece.getPosition()) || placesUnderThreat;
-//                    }
-//                    if (placesUnderThreat) moves.remove(move);
-//                    board.getTile(piece.getPosition()).setPiece(piece);
-//                    board.getTile(move).clearPiece();
-//                }
-                // removes all tile conflicts pieces oppoents could move to if king were not blocking
-//                moves.addAll(piece.getValidMoves(board));
-//                board.getTile(piece.getPosition()).clearPiece();
-//                for (Piece oppPiece: board.getOpponent().getPlayerPieces())
-//                {
-//                    for (Coord oppMove: oppPiece.getValidMoves(board))
-//                    {
-//                        moves.remove(oppMove);
-//                    }
-//                }
-//                // removes instances king could move to which would lead to a conflict i.e stops him from moving
-//                // into a tile that would let him be taken (pawns do not know they can attack unless move is simulated)
-//                for (Coord kingsMove: piece.getValidMoves(board))
-//                {
-//                    board.getTile(kingsMove).setPiece(piece);
-//                    for (Piece oppPiece: board.getOpponent().getPlayerPieces())
-//                    {
-//                        if (oppPiece.getValidMoves(board).contains(kingsMove)) moves.remove(kingsMove);
-//                    }
-//                    board.getTile(kingsMove).clearPiece();
-//                }
-//                board.getTile(piece.getPosition()).setPiece(piece);
-//            }
-//        }
-//        else if(!king.isUnderThreat())
-//        {
-//            boolean placesKingInCheck = false;
-//            board.getTile(piece.getPosition()).clearPiece();
-//            for (Piece oppPiece: board.getOpponent().getPlayerPieces())
-//            {
-//                for (Coord oppMove : oppPiece.getValidMoves(board))
-//                {
-//                    placesKingInCheck = oppMove.equals(king.getPosition()) || placesKingInCheck;
-//                }
-//            }
-//            board.getTile(piece.getPosition()).setPiece(piece);
-//            if (!placesKingInCheck) moves.addAll(piece.getValidMoves(board));
-//        }
-//        else // only adds valid moves for when king in check
-//        {
-//            Piece attacker = king.getAttacker();
-//            if (king.getValidMoves(board).contains(attacker.getPosition())
-//                    && piece.getValidMoves(board).contains(attacker.getPosition()))
-//                moves.add(attacker.getPosition());
-//            for (Coord enemyMove : attacker.getValidMoves(board))
-//            {
-//                if (piece.getValidMoves(board).contains(enemyMove))
-//                {
-//                    board.getTile(piece.getPosition()).clearPiece();
-//                    board.getTile(enemyMove).setPiece(piece);
-//                    if (!king.getAttacker().getValidMoves(board).contains(king.getPosition()))
-//                        moves.add(enemyMove);
-//                    board.getTile(enemyMove).clearPiece();
-//                    board.getTile(piece.getPosition()).setPiece(piece);
-//                }
-//            }
-//            if (piece instanceof Castle && piece.isFirstMove())
-//            {
-//                Coord origin = piece.getPosition();
-//                switch (piece.teamPiece)
-//                {
-//                    case P1:
-//                        if (origin.x == 0 && origin.y == 7 && board.getP1().getKing().isFirstMove()
-//                                && !(board.getTile(1, 7).isOccupied() || board.getTile(2, 7).isOccupied()
-//                                || board.getTile(3, 7).isOccupied()))
-//                        {
-//                            moves.add(new Coord(3, 7));
-//                        }
-//                        if (origin.x == 7 && origin.y == 7 && board.getP1().getKing().isFirstMove()
-//                                && !(board.getTile(5, 7).isOccupied() || board.getTile(6, 7).isOccupied()))
-//                        {
-//                            moves.add(new Coord(5, 7));
-//                        }
-//                        break;
-//                    case P2:
-//                        if (origin.x == 1 && origin.y == 0 && board.getP2().getKing().isFirstMove()
-//                                && !(board.getTile(1, 0).isOccupied() || board.getTile(2, 0).isOccupied()
-//                                || board.getTile(3, 0).isOccupied()))
-//                        {
-//                            moves.add(new Coord(3, 0));
-//                        }
-//                        if (origin.x == 7 && origin.y == 0 && board.getP2().getKing().isFirstMove()
-//                                && !(board.getTile(5, 0).isOccupied() || board.getTile(6, 0).isOccupied()))
-//                        {
-//                            moves.add(new Coord(5, 0));
-//                        }
-//                        break;
-//                }
-//            }
-//        }
         return moves;
     }
 
@@ -334,67 +245,7 @@ abstract class Player
 
     void movePiece(Piece piece, Coord origin, Coord destination)
     {
-        // makes castling move
-        if (piece instanceof Castle && piece.isFirstMove() && king.isFirstMove())
-        {
-            Coord kingsOrigin = king.getPosition();
-            switch (player)
-            {
-                case P1:
-                    if (origin.x == 0 && origin.y == 7 && destination.x == 3 && destination.y == 7
-                            && !(board.getTile(1, 7).isOccupied() || board.getTile(2, 7).isOccupied()
-                            || board.getTile(3, 7).isOccupied()))
-                    {
-                        board.getTile(kingsOrigin).clearPiece();
-                        getPlayerPieces().remove(king);
-                        king = new King(new Coord(2, 7), getTeam(), getColour());
-                        playerPieces.add(king);
-                        king.setFirstMove();
-                        board.getTile(2, 7).setPiece(king);
-                        castled = true;
-                    }
-                    if (origin.x == 7 && origin.y == 7 && destination.x == 5 && destination.y == 7
-                            && !(board.getTile(5, 7).isOccupied() || board.getTile(6, 7).isOccupied()))
-                    {
-                        board.getTile(kingsOrigin).clearPiece();
-                        getPlayerPieces().remove(king);
-                        king = new King(new Coord(6, 7), getTeam(), getColour());
-                        playerPieces.add(king);
-                        king.setFirstMove();
-                        board.getTile(6, 7).setPiece(king);
-                        castled = true;
-                    }
-                    break;
-                case P2:
-                    if (origin.x == 0 && origin.y == 0 && destination.x == 3 && destination.y == 0
-                            && !(board.getTile(1, 0).isOccupied() || board.getTile(2, 0).isOccupied()
-                            || board.getTile(3, 0).isOccupied()))
-                    {
-                        board.getTile(kingsOrigin).clearPiece();
-                        getPlayerPieces().remove(king);
-                        king = new King(new Coord(2, 0), getTeam(), getColour());
-                        playerPieces.add(king);
-                        king.setFirstMove();
-                        board.getTile(2, 0).setPiece(king);
-                        castled = true;
-                    }
-                    if (origin.x == 7 && origin.y == 0 && destination.x == 5 && destination.y == 0
-                            && !(board.getTile(5, 0).isOccupied() || board.getTile(6, 0).isOccupied()))
-                    {
-                        board.getTile(kingsOrigin).clearPiece();
-                        getPlayerPieces().remove(king);
-                        king = new King(new Coord(6, 0), getTeam(), getColour());
-                        playerPieces.add(king);
-                        king.setFirstMove();
-                        board.getTile(6, 0).setPiece(king);
-                        castled = true;
-                    }
-                    break;
-            }
-        }
-        // sets firstmove to false
         piece.setFirstMove();
-
 
         // swaps pawn for queen if at end of board
         boolean pawnUpgrade = false;
@@ -425,25 +276,69 @@ abstract class Player
             }
         }
 
+        board.getTile(origin).clearPiece();
+
         // removes attacked pieces from players list
         if (board.getTile(destination).isOccupied())
         {
             board.opponent.removePiece(board.getTile(destination).getTilePiece());
         }
-        board.getTile(destination).clearPiece();
-
         if (!pawnUpgrade) board.getTile(destination).setPiece(piece);
 
         king.setUnderThreat(false);
 
         // sets king under threat
         piece.setCoord(destination);
-        board.getTile(origin).clearPiece();
+        if (piece instanceof King)
+        {
+            king = (King) piece;
+        };
         if (piece.getValidMoves(board).contains(board.opponent.getKing().getPosition()))
         {
             board.opponent.getKing().setUnderThreat(true);
         }
 
+    }
+
+    private void removePiece(Piece piece)
+    {
+        for (Iterator<Piece> it = playerPieces.iterator(); it.hasNext();)
+        {
+            Piece pieceRem = it.next();
+            if (pieceRem.getClass().equals(piece.getClass()) && piece.getPosition().equals(pieceRem.getPosition()))
+            {
+                it.remove();
+            }
+        }
+    }
+
+    void clearPlayerPieces()
+    {
+        playerPieces = new ArrayList<>();
+    }
+
+    public boolean canCastle() {
+        return canCastle;
+    }
+
+    public boolean isCastling() {
+        return isCastling;
+    }
+
+    public void setCastling(boolean castling) {
+        isCastling = castling;
+    }
+
+    public void setCanCastle(boolean canCastle) {
+        this.canCastle = canCastle;
+    }
+
+    public Coord getCastleCastlingDestination() {
+        return castleCastlingDestination;
+    }
+
+    public Coord getKingCastleDestination() {
+        return kingCastleDestination;
     }
 
     void setMoving(boolean status)
@@ -466,17 +361,6 @@ abstract class Player
         return playerType == HUMAN;
     }
 
-    private void removePiece(Piece piece)
-    {
-        for (Iterator<Piece> it = playerPieces.iterator(); it.hasNext();)
-        {
-            Piece pieceRem = it.next();
-            if (pieceRem.getClass().equals(piece.getClass()) && piece.getPosition().equals(pieceRem.getPosition()))
-            {
-                it.remove();
-            }
-        }
-    }
 
     Team getPlayerType()
     {
@@ -551,7 +435,6 @@ class HumanPlayer extends Player
     void endTime()
     {
         secondsTotal += System.currentTimeMillis() - startTime;
-        System.out.println(secondsTotal);
     }
 
     boolean hasPiece(Tile t)
@@ -614,6 +497,11 @@ class AIPlayer extends Player
         else {
             board.considerMove(move.getOrigin());
             board.makeMove(move.getDestination());
+            // makes the ai's castle move, given board would only ever allow players turn to remain ai if player castling
+            if (board.playersTurn == board.getP2() && board.playersTurn.isCastling())
+            {
+                board.makeMove(board.playersTurn.getKingCastleDestination());
+            }
         }
         return true;
     }
@@ -631,8 +519,7 @@ class AIPlayer extends Player
         else i = 1;
         Node root = new Node(b);
         score = new TreeSet<>();
-//        miniMax2(0, copy);
-        miniMax(i,0, Integer.MIN_VALUE, Integer.MAX_VALUE, b, root);
+        miniMax(i, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, new Board(b), root);
     }
 
     private int miniMax(int pInt, int depth, int alpha, int beta, Board b, Node n)
@@ -650,25 +537,43 @@ class AIPlayer extends Player
         else temp = Integer.MAX_VALUE;
 
         Set<PointsAndMoves> moves = new HashSet<>();
-        for (Piece piece: player.getPlayerPieces())
+        if(!(player.isCastling()))
         {
-            for (Coord coord: player.getPieceMoves(piece))
+            for (Piece piece : player.getPlayerPieces())
             {
-                moves.add(new PointsAndMoves(piece.getPosition(), coord));
-            }
+                for (Coord coord : player.getPieceMoves(piece))
+                {
+                    moves.add(new PointsAndMoves(piece.getPosition(), coord));
+                }
 
+            }
+        }
+        // adds the only two moves for a king when castling
+        else
+        {
+            moves.add(new PointsAndMoves(player.getKing().getPosition(), player.getKing().getPosition()));
+            moves.add(new PointsAndMoves(player.getKing().getPosition(), player.getKingCastleDestination()));
+            depth--; // given only 2 moves, can search by an additional depth at little to no loss of efficiency
         }
         if (moves.size() == 0) System.out.println("no moves available");
 
-//        try {
+        try {
         for (PointsAndMoves move : moves) {
             b.setAIMakingMove(true);
-            b.considerMove(move.getOrigin());
+            if (!player.isCastling()) b.considerMove(move.getOrigin());
             b.makeMove(move.getDestination());
             b.setAIMakingMove(false);
             int currentScore;
             if (pInt == 1) {
-                currentScore = miniMax(0, depth + 1, alpha, beta, b, newN);
+                // castling call, player 1's go again
+                if (b.playersTurn.isCastling())
+                {
+                    currentScore = miniMax(1, depth + 1, alpha, beta, b, newN);
+                }
+                else
+                {
+                    currentScore = miniMax(0, depth + 1, alpha, beta, b, newN);
+                }
                 move.setScore(currentScore);
                 scores.add(move);
                 temp = Math.max(temp, currentScore);
@@ -677,7 +582,15 @@ class AIPlayer extends Player
                     score.add(move);
                 }
             } else if (pInt == 0) {
-                currentScore = miniMax(1, depth + 1, alpha, beta, b, newN);
+                // castling call, player 2's go again
+                if (b.playersTurn.isCastling())
+                {
+                    currentScore = miniMax(0, depth + 1, alpha, beta, b, newN);
+                }
+                else
+                {
+                    currentScore = miniMax(1, depth + 1, alpha, beta, b, newN);
+                }
                 move.setScore(currentScore);
                 scores.add(move);
                 temp = Math.min(temp, currentScore);
@@ -689,12 +602,12 @@ class AIPlayer extends Player
                 break;
             }
         }
-//        }
-//        catch (NullPointerException e)
-//        {
-//            brokeat = newN.b;
-//            System.out.println("Null pointer");
-//        }
+        }
+        catch (NullPointerException e)
+        {
+            brokeat = newN.b;
+            System.out.println("Null pointer");
+        }
 //        }
 //
         return (player == b.getP2())? scores.first().getScore(): scores.last().getScore();

@@ -175,8 +175,12 @@ class Tile extends JPanel {
 
     void setPiece(Piece piece)
     {
-        if (this.isOccupied()) clearPiece();
+        if (this.isOccupied())
+        {
+            clearPiece();
+        }
         tilePiece = piece;
+        piece.setCoord(tileCoord);
     }
 
     Color getToPaint()

@@ -66,10 +66,10 @@ public class WinPanel extends JPanel {
         // adds top 5 scores, if 5 scores exist
         JLabel topScores = new JLabel("Top 5 Scores");
         gblGroupInner.addToList(new GBLLeaf(0,5,2,1, new Insets(50,70,0,10), topScores));
+        int itCount = 0;
         if (scores.getScores().size() > 0)
         {
             int topScoresCount = Math.min(scores.getScores().size(), 5);
-            int itCount = 0;
             for(Iterator<PlayerScore> scoreIt = scores.getScores().descendingIterator(); scoreIt.hasNext() && itCount < topScoresCount;)
             {
                 PlayerScore nextScore = scoreIt.next();
@@ -94,7 +94,7 @@ public class WinPanel extends JPanel {
 
         JButton exit = new JButton("Close");
         exit.addActionListener(board.getUi().buttonH);
-        gblGroupInner.addToList(new GBLLeaf(0, 7, 3, 1, exit));
+        gblGroupInner.addToList(new GBLLeaf(0, 7+itCount, 3, 1, exit));
 
         // sets background black and opaque, as using overlaylayout to show ontop of chess board
         setBackground(new Color((float) 0.0,(float) 0.0, (float) 0.0, (float) 0.6));
