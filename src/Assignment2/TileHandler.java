@@ -1,29 +1,32 @@
 package Assignment2;
 
-import javax.swing.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.Arrays;
 
-import static Assignment2.Team.*;
+/*
+ * TileHandler's purpose is to implemet mouseListeners, highlighting tiles in which contain moves that
+ * a player can make, and sending the coordinates of the tile's locations to the boards makeMove and considerMove
+ * methods
+ */
 public class TileHandler implements MouseListener {
-    Board board;
-    boolean shortClick = false;
-    Piece movinePiece;
+    private Board board; // reference to the board
+    private boolean shortClick = false;
 
+    // default constructor
     TileHandler(Board board)
     {
         this.board = board;
     }
 
+    // overrides the method for when a mouse enters a Tile/Jpanel
     @Override
     public void mouseEntered(MouseEvent e)
     {
         board.getUi().keyListener.clearIndex();
         Player player = board.getPlayersTurn();
         Tile tileEntered = ((Tile)e.getComponent());
+        // ensures the tile entered is a valid human move, and repaints accoringly
         if (!board.isGameOver() && player.isHuman())
         {
             if (tileEntered.isOccupied() && board.getAvailablePiecesToMove().contains(tileEntered.getTileCoord())
@@ -40,6 +43,7 @@ public class TileHandler implements MouseListener {
         }
     }
 
+    // overrides the method for when a mouse leaves a Tile/Jpanel, resetting its colour
     @Override
     public void mouseExited(MouseEvent e) {
         Tile tileExited = ((Tile)e.getComponent());
@@ -59,13 +63,9 @@ public class TileHandler implements MouseListener {
 
     @Override
     public void mouseClicked(MouseEvent e) {
-//        if (!shortClick)
-//        {
-//            System.out.println("MouseClick");
-//            sendClick(e);
-//        }
     }
 
+    // using mouse pressed and released given mouseclicked can be unpredictable
     @Override
     public void mousePressed(MouseEvent e)
     {
@@ -75,6 +75,7 @@ public class TileHandler implements MouseListener {
         }
     }
 
+    // calls the considerMove/makeMove if valid
     @Override
     public void mouseReleased(MouseEvent e) {
         Player pTurn = board.getPlayersTurn();

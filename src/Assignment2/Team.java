@@ -1,5 +1,13 @@
 package Assignment2;
 
+/*
+ * Team enum class's purpose is to hold package specific constants, and static methods for evaluating a board
+ *
+ * Chess board evaluations have been taken from [1] for piece values, and positional board values
+ *
+ * [1]"Simplified Evaluation Function - Chessprogramming wiki", Chessprogramming.org, 2019. [Online].
+ * Available: https://www.chessprogramming.org/Simplified_Evaluation_Function. [Accessed: 15- Dec- 2019].
+ */
 public enum Team {
     WHITE,
     BLACK,
@@ -10,7 +18,7 @@ public enum Team {
     WINNER,
     STALEMATE;
 
-    public static final int getPieceScore(Piece piece)
+    public static int getPieceScore(Piece piece)
     {
         int score = 0;
         int posX = piece.getPosition().x;

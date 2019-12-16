@@ -2,14 +2,9 @@ package Assignment2;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.TimerTask;
+import java.util.Timer;
 
 import static Assignment2.Team.*;
 
@@ -26,10 +21,10 @@ import static Assignment2.Team.*;
     to play the game. A keyboard listener 'MyKeyListener' is attached to the main chess panel, and mouse listeners
     'TileHandler' is attached to each tile, which extends JPanel, to react to mouse events.
 
-    Upon game ending, which is determined through the Board class, initWinner is called which instantiates
-    'WinPanel', which extends JPanel, to open scores and display them
+    Upon game ending, which is determined through the Board class, initScores is called which instantiates
+    'ScorePanel', which extends JPanel, to open scores and display them
 
-    The main elements involves in ui are ChessUI, PlayerWelcome, Tile, and WinPanel in which the last three extend
+    The main elements involves in ui are ChessUI, PlayerWelcome, Tile, and ScorePanel in which the last three extend
     JPanel. I have kept these in one .java file for easier reading, whereas the keyboardlistener and mouselistener are
     seperated, both named 'MyKeyListener' and 'TileHandler' respectively.
  */
@@ -38,7 +33,7 @@ public class ChessUI extends JFrame{
     JButton startGame; // start game button, accessed through handlers to control initChess on button click
     ButtonHandler buttonH; // main button handler, used for JPanels to attach the same button listener
     private MenuBar menu; // the menu variable, used within the button handler class to identify menu items clicked
-    private JPanel chessPanel; // the main chess parent panel, used via initWinner and reDoChess for access
+    private JPanel chessPanel; // the main chess parent panel, used via initScores and hideScores for access
     MyKeyListener keyListener; // the keyboard listener, used within tileHandler mouse listener to reset variables
     private JPanel welcome;
 
@@ -54,6 +49,8 @@ public class ChessUI extends JFrame{
         startGame = new JButton("I want to play a game...");
         menu = new MenuBar(this);
         setPreferredSize(new Dimension(800, 800));
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setResizable(false);
         initPlayerWelcome();
         setJMenuBar(menu);
     }
@@ -106,27 +103,37 @@ public class ChessUI extends JFrame{
         setVisible(true);
         pack();
         repaint();
+        displayMessage(chessBoard.genMessage(chessBoard.playersTurn.getTeam() + "'s turn"));
     }
 
     /*
-     * initWinner's main purpose is to instantiate a WinPanel at the end of a game displaying users scores
-     * aswell as the top 5 scores of all time, whilst highling the row if the current score has achieved top 5
+     * initScores's main purpose is to instantiate a ScorePanel at the end of a game, or upon user clicking highscores
+     * within the menu, displaying users scores at endgame aswell as the top 5 scores of all time, whilst highling the
+     * row if the current score at end game has achieved top 5
      * in purple
      */
-    void initWinner()
+    void initScores()
     {
-        // slight delay so that user can see where they were taken
-        try {
-            Thread.sleep(2000);
-        }
-        catch (InterruptedException ignore){}
         getContentPane().removeAll();
         JPanel overlayPan = new JPanel();
         overlayPan.setLayout(new OverlayLayout(overlayPan));
+        overlayPan.add(new ScorePanel(chessBoard, this));
         if (!(chessPanel == null))
         {
-        overlayPan.add(new WinPanel(chessBoard));
-        overlayPan.add(chessPanel);
+            overlayPan.add(chessPanel);
+            if (chessBoard.isGameOver())
+            {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignore) {}
+                overlayPan.add(chessPanel);
+            }
+        }
+        else
+        {
+            overlayPan.add(welcome);
+            welcome.setVisible(false);
+        }
         add(overlayPan);
         setVisible(true);
         pack();
@@ -134,13 +141,77 @@ public class ChessUI extends JFrame{
     }
 
     /*
-     * reDoChess's main purpose is to show the chess board again once a game is over and the user clicks close
-     * to remove the top scores and view the board again
+     * DisplayMessage was a last minute addition, it's purpose is to give the player indication of
+     * who's move it is and utilizes multithreading with respect to the AI player making a move.
+     *
+     * Jpanels are made using overlaylayout manager as seen in initScores above.
+     *
+     * @params
+     *      message, JLabel containing the text to be displayed
      */
-    void reDoChess()
+    void displayMessage(JLabel message)
     {
         getContentPane().removeAll();
-        add(chessPanel);
+        JPanel overlayPan = new JPanel();
+        overlayPan.setLayout(new OverlayLayout(overlayPan));
+        JPanel messagePan = new JPanel();
+        JPanel messageHolder = new JPanel();
+        overlayPan.setPreferredSize(new Dimension(800, 800));
+        messagePan.setPreferredSize(new Dimension(800, 800));
+        Font newFont = new Font(message.getFont().getName(), Font.ITALIC + Font.BOLD, message.getFont().getSize() + 40);
+        message.setFont(newFont);
+        Dimension size = message.getPreferredSize();
+        messagePan.setLayout(null);
+        messageHolder.setPreferredSize(new Dimension(size.width, size.height));
+        messageHolder.setBounds(400 - (size.width/2), 400 - size.height, size.width, size.height);
+        messageHolder.add(message);
+        messagePan.add(messageHolder);
+        messagePan.setBackground(new Color((float) 0.0,(float) 0.0, (float) 0.0, (float) 0));
+        messageHolder.setBackground(new Color((float) 0.0,(float) 0.0, (float) 0.0, (float) 0));
+        message.setForeground(new Color(201, 36, 36));
+        overlayPan.add(messagePan);
+        overlayPan.add(chessPanel);
+        add(overlayPan);
+        setVisible(true);
+        pack();
+        // threading delayed task to synchronize with AI making move
+        // in hindsight, this could have been used for a much greater benefit within the AI module
+        // to look more than 3 moves ahead. But as this is 12pm on Sunday, having just finished, it is
+        // too late to implement in this version
+        int delay = (chessBoard.getOpponent().getKing().isUnderThreat())? 1000: 750;
+        TimerTask hideScreen = new TimerTask() {
+            @Override
+            public void run() {
+                hideScores();
+                if (chessBoard != null)
+                {
+                    synchronized (chessBoard.lock)
+                    {
+                        try {
+                            Thread.sleep(delay);
+                        } catch (InterruptedException ignore) {}
+                        chessBoard.lock.notifyAll();
+                    }
+                }
+            }
+        };
+        Timer timer = new Timer(true);
+        timer.schedule(hideScreen, delay);
+    }
+
+    /*
+     * hideScores's main purpose is to show the chess board again once a game is over and the user clicks close
+     * to remove the top scores and view the board again
+     */
+    void hideScores()
+    {
+        getContentPane().removeAll();
+        if (chessPanel != null) add(chessPanel);
+        else
+        {
+            add(welcome);
+            welcome.setVisible(true);
+        }
         setSize(new Dimension(800, 800));
         setVisible(true);
         pack();
@@ -172,15 +243,22 @@ class Tile extends JPanel {
     private Color toPaint; // the active colour for the tiles background
     private final Color hostileCol = new Color(201, 36, 36); // the colour for offensive moves
     private final Color movingColour = new Color(50, 166, 108); // the colour indicating a player can move a piece
-    private final Color movePieceColour = new Color(127, 67, 196);
-    private final Color defaultCol;
-    private final Coord tileCoord;
-    private final int width = 100;
-    private final int height = 100;
+    private final Color movePieceColour = new Color(127, 67, 196); // the colour for moving to upon highlight
+    private final Color defaultCol; // default tile colour
+    private final Coord tileCoord; // positional value of this tile
+    private final int width = 100; // size
+    private final int height = 100; // size
 
+    /*
+     * default constructor used, initializes default colours
+     *
+     * @param
+     *      tilePlace, the position to which this tile belongs
+     */
     Tile(Coord tilePlace)
     {
         tileCoord = tilePlace;
+        // algorithm for determining if this colour is brown or yellow in colour
         if (tilePlace.y%2 == 1)
         {
             if (tilePlace.x%2 == 1) defaultCol = new Color(205,133,63);
@@ -196,7 +274,8 @@ class Tile extends JPanel {
         setPreferredSize(new Dimension(width, height));
     }
 
-
+    // overrides the paint component, including the pieces shape if this tile has a piece - see Piece.java for shape
+    // implementation
     @Override
     public void paintComponent(Graphics g)
     {
@@ -204,12 +283,14 @@ class Tile extends JPanel {
         if (tilePiece != null) tilePiece.drawing.renderShape(g);
     }
 
+    // overrides toString, mainly for debugging purposes
     @Override
     public String toString()
     {
         return "I am a Tile, my piece is:- \n" + getTilePiece() +"\nMy posittion is:- \n" + getTileCoord();
     }
 
+    // the rest of the methods are set/get methods pertaining to the class's member variables
     void setColourMovePiece()
     {
         toPaint = movePieceColour;
@@ -234,6 +315,7 @@ class Tile extends JPanel {
         background =  new Rectangle(0, width, 0, height, toPaint);
     }
 
+    // this also sets the positional value of the piece
     void setPiece(Piece piece)
     {
         if (this.isOccupied())
@@ -265,12 +347,33 @@ class Tile extends JPanel {
     }
 }
 
+/*
+ * PlayerWelcome's purpose is to create the welcome screen JPanel. This panel uses GridBagLayout for its main layout
+ * style for which a composite design pattern has been used, see GBLPattern for implementation.
+ *
+ * Basically it was identified that GridBadConstraints needed constant updating of width, height, insets, gridx etc values
+ * so instead of heaving to type these out for each new component, an interface was created containing a GBLGroup, and GBLLeaf
+ *
+ * The GBLLeaf assertains individual component grid bag constrains, and are added to the group. The group item applies
+ * the constraints of each component to the panel
+ *
+ *
+ * The class has 3 member variables pertaining to the users options on the main screen which are used within
+ * the button handlers to instantiate players in the board correctly given user options.
+ */
 class PlayerWelcome extends JPanel {
     ButtonGroup teamChoices; // used to contain radio buttons for team colour identification in button handler
     ButtonGroup oppChoices; // used to containg radio buttons for opponent choices in button handler
     JTextField playerName; // used to contain players name for button handler
 
+    /*
+     * Default constructor used to instantiate the UI for the welcome screen
+     *
+     * @param
+     *      ui, ChessUi instance
+     */
     PlayerWelcome(ChessUI ui) {
+        // initializes variables and defaults
         teamChoices = new ButtonGroup();
         oppChoices = new ButtonGroup();
         playerName = new JTextField(10);
@@ -278,11 +381,14 @@ class PlayerWelcome extends JPanel {
         GridBagLayout gbl = new GridBagLayout();
         GridBagConstraints gbc = new GridBagConstraints();
         setLayout(gbl);
+        // main GBLGroup to which each individual component is added too
         ComplexGBL gblGroup = new ComplexGBL();
+        // welcome component
         JLabel welcome = new JLabel("Welcome! Lets play some chess..");
         gblGroup.addToList(new GBLLeaf(1, 1, 4, 1,
                 new Insets(0, 0, 100, 0), welcome));
 
+        // colour components
         JLabel teamChoice = new JLabel("White or Black:");
         gblGroup.addToList(new GBLLeaf(1, 2, 1, 2,
                 new Insets(0, 0, 0, 28), teamChoice));
@@ -298,6 +404,7 @@ class PlayerWelcome extends JPanel {
         teamChoices.add(white);
         teamChoices.add(black);
 
+        // opponent components
         JLabel oppositionChoice = new JLabel("Human or Ai opponent:");
         gblGroup.addToList(new GBLLeaf(3, 2, 1, 2,
                 new Insets(0, 100, 0, 0), oppositionChoice));
@@ -312,18 +419,22 @@ class PlayerWelcome extends JPanel {
         oppChoices.add(ai);
         oppChoices.add(human);
 
+        // player name components
         JLabel pName = new JLabel("Enter your name: ");
         gblGroup.addToList(new GBLLeaf(2, 4, 1, 1,
                 new Insets(50, 0, 10, 0), pName));
         gblGroup.addToList(new GBLLeaf(3, 4, 1, 1,
                 new Insets(50, 10,10,0), playerName));
 
+        // start game components
         JButton play = ui.startGame;
         play.addActionListener(ui.buttonH);
         gblGroup.addToList(new GBLLeaf(1, 5, 4, 1,
                 new Insets(100, 0, 0, 0), play));
         gblGroup.addGBL(gbc, gbl, this);
 
+        // Creates a few tiles for the top of the interface, assigning random chess pieces to the tiles
+        // basically the only fancy part of the welcome screen (not a big ui person)
         JPanel vs = new JPanel();
         vs.setLayout(new GridLayout(1, 3));
         Tile whiteSample = new Tile(new Coord(0, 0));
@@ -345,6 +456,12 @@ class PlayerWelcome extends JPanel {
         add(vs);
     }
 
+    /*
+     * Generates a random chess piece of a given colour. Static class as used for gameover score screen too
+     *
+     * @param
+     *      team, integer specifying whether to generate a white or black piece
+     */
     static Piece getPiece(int team)
     {
         int randomPiece = (int) (Math.random() * 6);
@@ -369,20 +486,35 @@ class PlayerWelcome extends JPanel {
 
 }
 
-class WinPanel extends JPanel {
-    private Tile tile = new Tile(new Coord(0,0));
+/*
+ * ScorePanel has two main purposes. It generates either a main score screen, which is used mid game or
+ * during the player welcome screen, or generates an end game score screen displaying the current player's score
+ * aswell as the top 5, whilst highlighting if the player attained an all time top score highlighting it in purple.
+ * Also a random chess piece is generated of the colour of the winning team
+ *
+ * For the top scores a ScoreHandler class instance is used, see FileHandler.java for how this is implemented
+ */
+class ScorePanel extends JPanel {
 
-    WinPanel(Board board)
+    /*
+     * Default constructor, using GridBagLayout alongside GBLPattern to set its layout
+     *
+     * @params
+     *      board, reference to either a live Board object or a null value (indicated whether to view top scores
+     *      or to display game over scores)
+     *
+     *      ui, reference to the main ChessUi object to attain its button handler
+     */
+    ScorePanel(Board board, ChessUI ui)
     {
+        // initializes variables and instantiates instances required
         ScoreHandler scores = new ScoreHandler("scores.txt");
         setPreferredSize(new Dimension(800, 800));
         GridBagLayout gblInner = new GridBagLayout();
         GridBagConstraints gbcInner = new GridBagConstraints();
         ComplexGBL gblGroupInner = new ComplexGBL();
         JPanel inner = new JPanel();
-        inner.setPreferredSize(new Dimension(400, 500));
         inner.setLayout(gblInner);
-
         GridBagLayout gblPrimary = new GridBagLayout();
         GridBagConstraints gbcPrimary = new GridBagConstraints();
         ComplexGBL gblGroupPrimary = new ComplexGBL();
@@ -391,8 +523,10 @@ class WinPanel extends JPanel {
         JLabel name, time, score;
         PlayerScore playerScore = null;
 
-        if (board.isGameOver())
+        // main code pertaining to end game view
+        if (!(board == null) && board.isGameOver())
         {
+            inner.setPreferredSize(new Dimension(400, 500));
             // generates a random chess piece from either the winners team, or player 1's team if stalemate
             int winner;
             if (board.getWinner() != null)
@@ -405,17 +539,17 @@ class WinPanel extends JPanel {
             Tile tile = new Tile(new Coord(0,0));
             tile.setPiece(winnerPiece);
             add(tile);
-            gblGroupInner.addToList(new GBLLeaf(0, 0, 2, 2, new Insets(0, 50, 50, 0), tile));
+            gblGroupInner.addToList(new GBLLeaf(0, 0, 3, 2, new Insets(0, 0, 50, 0), tile));
 
             // adds gameover label
             String gOver = (((HumanPlayer) board.getP1()).getWinStatus() == WINNER) ? "Congratulations! you Won!!!" :
                     ((HumanPlayer) board.getP1()).getWinStatus() == STALEMATE ? "Congratulations, you reached a Stalemate" :
                             "Sorry, you were beaten, better luck next time";
             JLabel gameover = new JLabel(gOver);
-            gblGroupInner.addToList(new GBLLeaf(0, 2, 2, 1, new Insets(0, 30, 0, 0), gameover));
+            gblGroupInner.addToList(new GBLLeaf(0, 2, 3, 1, new Insets(0, 0, 0, 0), gameover));
 
             JLabel pScore = new JLabel("Your score");
-            gblGroupInner.addToList(new GBLLeaf(0, 3, 2, 1, new Insets(50, 50, 10, 0), pScore));
+            gblGroupInner.addToList(new GBLLeaf(0, 3, 3, 1, new Insets(50, 0, 10, 0), pScore));
 
             // adds current player score to layout
             playerScore = new PlayerScore(board.getP1());
@@ -427,11 +561,16 @@ class WinPanel extends JPanel {
             gblGroupInner.addToList(new GBLLeaf(2, 4, score));
             scores.addScore(playerScore);
         }
+        else
+        {
+            // sets size for just displaying scores
+            inner.setPreferredSize(new Dimension(400, 300));
+        }
 
 
         // adds top 5 scores, if 5 scores exist
         JLabel topScores = new JLabel("Top 5 Scores");
-        gblGroupInner.addToList(new GBLLeaf(0,5,2,1, new Insets(50,70,0,10), topScores));
+        gblGroupInner.addToList(new GBLLeaf(0,5,3,1, new Insets(50,20,0,10), topScores));
         int itCount = 0;
         if (scores.getScores().size() > 0)
         {
@@ -458,8 +597,15 @@ class WinPanel extends JPanel {
             }
         }
 
+        if (scores.getScores().size() == 0)
+        {
+            JLabel noScore = new JLabel("You have not won, lost, or drew a game yet");
+            gblGroupInner.addToList(new GBLLeaf(0, 6, 3, 1, new Insets(20, 0, 20, 0), noScore));
+        }
+
+        // adds close button
         JButton exit = new JButton("Close");
-        exit.addActionListener(board.getUi().buttonH);
+        exit.addActionListener(ui.buttonH);
         gblGroupInner.addToList(new GBLLeaf(0, 7+itCount, 3, 1, exit));
 
         // sets background black and opaque, as using overlaylayout to show ontop of chess board
@@ -469,6 +615,9 @@ class WinPanel extends JPanel {
         gblGroupPrimary.addGBL(gbcPrimary, gblPrimary, this);
     }
 
+    /*
+     * getClockForm's purpose is to format an integer of milliseconds to a readable time format
+     */
     private String getClockFormat(int milliseconds)
     {
         int totSeconds = milliseconds / 1000;

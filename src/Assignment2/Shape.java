@@ -3,16 +3,24 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ * The shape interface is a composite design pattern, with each individual shape  being created and added to a
+ * Complex shape. The renderShape is therefor different for each sub shape and implemented therein
+ */
 interface Shape
 {
-    void renderShape(Graphics g);
+    void renderShape(Graphics g); // main draw method for each shape
 }
 
+/*
+ * Rectangle's purpose is to create a filled rectangle, with a 1mm grey border
+ */
 class Rectangle implements Shape
 {
-    int x1, x2, y1, y2;
-    Color COLOUR;
+    private int x1, x2, y1, y2; // position values for a rectangle
+    private Color COLOUR; // colour
 
+    // standard constructor
     Rectangle(int x1, int x2, int y1, int y2, Color colour)
     {
         COLOUR = colour;
@@ -22,11 +30,7 @@ class Rectangle implements Shape
         this.y2 = y2;
     }
 
-    public void changeCol(Color colour)
-    {
-        COLOUR = colour;
-    }
-
+    // overrides the renderShape to draw this specific shape
     @Override
     public void renderShape(Graphics g)
     {
@@ -37,9 +41,12 @@ class Rectangle implements Shape
     }
 }
 
+/*
+ * Base's purpose is to draw a filled rectangle at the same position for each piece
+ */
 class Base implements Shape
 {
-    Color COLOUR;
+    private Color COLOUR;
 
     Base(Color colour)
     {
@@ -57,10 +64,10 @@ class Base implements Shape
 
 class Oval implements Shape
 {
-    int x, y, width, height, rotate;
-    Color COLOUR;
+    private int x, y, width, height;
+    private Color COLOUR;
 
-    public Oval(int x, int y, int width, int height, Color colour)
+    Oval(int x, int y, int width, int height, Color colour)
     {
         COLOUR = colour;
         this.x = x;
@@ -82,10 +89,10 @@ class Oval implements Shape
 
 class Triangle implements Shape
 {
-    int[] x, y;
-    int[] x2 = new int[3];
-    int[] y2 = new int[3];
-    Color COLOUR;
+    private int[] x, y;
+    private int[] x2 = new int[3];
+    private int[] y2 = new int[3];
+    private Color COLOUR;
 
     public Triangle(int[] x, int y[], Color colour)
     {
@@ -112,10 +119,10 @@ class Triangle implements Shape
 
 class Circle implements Shape
 {
-    int x, y, r;
+    private int x, y, r;
     Color COLOUR;
 
-    public Circle(int x, int y, int r, Color colour)
+    Circle(int x, int y, int r, Color colour)
     {
         COLOUR = colour;
         this.x = x;
@@ -134,10 +141,10 @@ class Circle implements Shape
 
 class Poly implements Shape
 {
-    int[] x, y;
-    Color COLOUR;
+    private int[] x, y;
+    private Color COLOUR;
 
-    public Poly(int[] x, int[] y, Color col)
+    Poly(int[] x, int[] y, Color col)
     {
         COLOUR = col;
         this.x = x;
@@ -153,9 +160,13 @@ class Poly implements Shape
     }
 }
 
+/*
+ * Complex shape is designed to add a group of shapes to its list, and then loop through them during the renderShape
+ * method calling each individual shapes renderShape methods
+ */
 class ComplexShape implements Shape
 {
-    List<Shape> shapeList;
+    private List<Shape> shapeList;
 
     ComplexShape()
     {

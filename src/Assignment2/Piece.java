@@ -7,6 +7,7 @@ import static Assignment2.Team.*;
 
 /*
  * The piece abstract class's purpose is to define generalised methods and variables applicable to all chess pieces
+ * whilst defining methods common to all pieces
  */
 abstract class Piece
 {
@@ -14,8 +15,8 @@ abstract class Piece
     final Team teamPiece; // the team the piece belongs to, indicative of what player, P1 or P2
     final Shape drawing; // an assortment of graphic drawings for specific pieces, used in paintComponents
     Color col; // WHITE or BLACK, the colour the piece is
-    boolean firstMove;
-    String stringCol;
+    boolean firstMove; // identifies a piece's first move
+    String stringCol; // string colour identifier
 
     /*
      * Default constructor, initiates coordinates and team
@@ -38,7 +39,7 @@ abstract class Piece
             col = Color.black;
             stringCol = "BLACK";
         }
-        drawing = setDrawing();
+        drawing = setDrawing(); // adds the group of shapes
         firstMove = true;
     }
 
@@ -53,10 +54,16 @@ abstract class Piece
         firstMove = piece.firstMove;
     }
 
+    /*
+     * getValidMoves purpose will be different for each piece, but generally return positions a piece can move in accordene
+     * to its rules
+     */
     abstract HashSet<Coord> getValidMoves(Board board);
+
     /*
      * setDrawing's purpose is to compile an assortment of Shapes and add them to the ComplexShape group to be drawn
-     * via paintComponent's Graphic object
+     * via paintComponent's Graphic object. ComplexShape and Shape are part of a composite design pattern used to group
+     * individual shapes together with a renderShape method called upon in the Tile's paintComponent method
      */
     abstract Shape setDrawing();
 
@@ -90,22 +97,7 @@ abstract class Piece
         position = new Coord(place.x, place.y);
     }
 
-
-    Coord getPosition()
-    {
-        return position;
-    }
-
-    boolean isFirstMove()
-    {
-        return firstMove;
-    }
-
-    void setFirstMove()
-    {
-        firstMove = false;
-    }
-
+    // overriding equality checks
     @Override
     public boolean equals(Object o)
     {
@@ -122,8 +114,24 @@ abstract class Piece
     }
 
     // will be overriding toString for debugging purposes
-//    @Override
-//    public abstract String toString();
+    @Override
+    public abstract String toString();
+
+    // get/set methods
+    Coord getPosition()
+    {
+        return position;
+    }
+
+    boolean isFirstMove()
+    {
+        return firstMove;
+    }
+
+    void setFirstMove()
+    {
+        firstMove = false;
+    }
 }
 
 /*
@@ -139,11 +147,13 @@ class Pawn extends Piece
         super(place, team, teamCol);
     }
 
+    // copy constructor
     Pawn(Pawn piece)
     {
         super(piece);
     }
 
+    // creates a HashSet (unique coords) and calls setMoves to populate it dependant on single move or double
     @Override
     public HashSet<Coord> getValidMoves(Board board)
     {
@@ -157,6 +167,17 @@ class Pawn extends Piece
         return moves;
     }
 
+    /*
+     * setMoves calculates whether a move is possible given the pieces position and the direction up or down the board
+     * the piece is moving i.e white or black. It does to by calling validMove with values
+     *
+     * @param
+     *      moves, a Set of coordinates to add valid moves to
+     *      board, a reference to the current board so that tiles can be checked for opposition/empty
+     *      x, int of its x position
+     *      y, int of its y position
+     *      move, int indicating moving up (positive) or down (negative)
+     */
     boolean setMoves(Set<Coord> moves, Board board, int x, int y, int move)
     {
         switch (move)
@@ -182,15 +203,19 @@ class Pawn extends Piece
                 break;
             case 2:
             case -2:
+                // double move
                 if (validMove(board, x, y + move) && !board.getTile(x, y+move).isOccupied())
-                    moves.add(new Coord(x, y+move));
+                {
+                    moves.add(new Coord(x, y + move));
+                    return true;
+                }
                 break;
         }
         return false;
     }
 
     /*
-     * Draws
+     * Sets the pawns group
      */
     Shape setDrawing()
     {
@@ -221,6 +246,7 @@ class Castle extends Piece
         super(place, team, teamCol);
     }
 
+    // copy constructor
     Castle(Castle piece)
     {
         super(piece);
@@ -249,6 +275,7 @@ class Castle extends Piece
         return cp;
     }
 
+    // adds moves specific to the castle piece, with a different version of setMoves for this piece
     @Override
     HashSet<Coord> getValidMoves(Board board)
     {
@@ -270,6 +297,17 @@ class Castle extends Piece
         return moves;
     }
 
+     /*
+      * continuously loops through directions adding moves to the list, until an occupied tile is found
+      *
+      * @params
+      *         moves, the Set of moves valid cords are to be added
+      *         board, a reference to the current board
+      *         x, the x position of the castle
+      *         y, the y position of the castle
+      *         xDir, a flag indicating x direction to be checked, positive or negative
+      *         yDir, a flag indication y direction to be checked, positive or negative
+      */
     private void setMoves (Set<Coord> moves, Board board, int x, int y, int xDir, int yDir)
     {
         while (validMove(board, x, y))
@@ -277,6 +315,7 @@ class Castle extends Piece
             Coord move = new Coord(x, y);
             if (board.getTile(x,y).isOccupied() && board.getTile(x, y).getTilePiece().teamPiece != teamPiece)
             {
+                // breaks the checking as enemy tile found
                 moves.add(move);
                 return;
             }
@@ -313,18 +352,24 @@ class Castle extends Piece
     }
 }
 
+/*
+ * Horse's purpose is to get drawings specific to the horse, and moves specific to the horse piece
+ */
 class Horse extends Piece
 {
+    // default constructor, calls super
     Horse (Coord place, Team team, Team teamCol)
     {
         super(place, team, teamCol);
     }
 
+    // copy constructor
     Horse(Piece piece)
     {
         super(piece);
     }
 
+    // creates shape objects pertaining to the horses drawing
     public Shape setDrawing()
     {
         ComplexShape cp = new ComplexShape();
@@ -345,6 +390,7 @@ class Horse extends Piece
         return cp;
     }
 
+    // returns valid moves for the horse piece
     @Override
     public HashSet<Coord> getValidMoves(Board board) {
         HashSet<Coord> moves = new HashSet<>();
@@ -377,6 +423,7 @@ class Horse extends Piece
         return moves;
     }
 
+    // checks if the move is valid and adds if so
     private void setMoves(Set<Coord> moves, Board board, int x, int y)
     {
         if (validMove(board, x, y)) moves.add(new Coord(x, y));
@@ -388,6 +435,10 @@ class Horse extends Piece
     }
 }
 
+/*
+ * Bishops purpose is to return only moves available to the bishop piece, and set about drawings for the bishops
+ * piece
+ */
 class Bishop extends Piece
 {
     Bishop (Coord place, Team team, Team teamCol)
@@ -419,6 +470,7 @@ class Bishop extends Piece
         return cp;
     }
 
+    // returns only valid moves for the bishop piece
     @Override
     HashSet<Coord> getValidMoves(Board board) {
         HashSet<Coord> moves = new HashSet<>();
@@ -443,6 +495,7 @@ class Bishop extends Piece
         return "B" + stringCol;
     }
 
+    // checks the moves generated by getValidMoves and adds valid ones to the list
     private void setMoves(Set<Coord> moves, Board board, int x, int y, int xDir, int yDir)
     {
         while(validMove(board, x, y))
@@ -476,6 +529,10 @@ class Bishop extends Piece
     }
 }
 
+/*
+ * Queens purpose is to return only moves available to the bishop piece, and set about drawings for the queens
+ * piece
+ */
 class Queen extends Piece
 {
     Queen (Coord place, Team team, Team teamCol)
@@ -505,6 +562,7 @@ class Queen extends Piece
         return cp;
     }
 
+    // returns opnly valid moves for the queen piece, combination of castle and bishop algorithm
     @Override
     public HashSet<Coord> getValidMoves(Board board) {
         HashSet<Coord> moves = new HashSet<>();
@@ -538,6 +596,7 @@ class Queen extends Piece
         return moves;
     }
 
+    // checks the moves generated in getValidMoves
     private void setMoves(Set<Coord> moves, Board board, int x, int y, int xDir, int yDir)
     {
         while (validMove(board, x, y)) {
@@ -572,17 +631,24 @@ class Queen extends Piece
     }
 }
 
+/*
+ * Kings purpose is to return only moves available to the King piece, and set about drawings for the King
+ * piece.
+ *
+ * In addition, stores a boolean underThreat to indicate the king is in check
+ */
 class King extends Piece
 {
+    private boolean underThreat; // indeicator for if king is placed in check
 
-    private boolean underThreat;
-
+    // default constructor, calls super, and initializes underThreat
     King (Coord place, Team team, Team teamCol)
     {
         super(place, team, teamCol);
         underThreat = false;
     }
 
+    // copy constructo
     King(King piece)
     {
         super(piece);

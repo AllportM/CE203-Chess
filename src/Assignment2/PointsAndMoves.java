@@ -1,29 +1,36 @@
 package Assignment2;
 
+/*
+ * PointsAndMoves's purpose is mainly used within the AI's decision making, creating coordinate origin, destination,
+ * and value of moves.
+ * Comparable has been implemented to allow for natural sorting in TreeSet collections
+ */
 class PointsAndMoves implements Comparable<PointsAndMoves>{
-    private Coord origin;
-    private Coord destination;
-    private int score;
+    private Coord origin; // coorrdinate origin of move
+    private Coord destination; // coordinate destination of move
+    private int score; // score
 
-    public PointsAndMoves(Coord origin, Coord destination)
+    // default constructor
+    PointsAndMoves(Coord origin, Coord destination)
     {
         this.origin = origin;
         this.destination = destination;
     }
 
-    public Coord getOrigin() {
+    // rest are basic set/get/overrid methods
+    Coord getOrigin() {
         return origin;
     }
 
-    public Coord getDestination() {
+    Coord getDestination() {
         return destination;
     }
 
-    public void setScore(int score) {
+    void setScore(int score) {
         this.score = score;
     }
 
-    public int getScore() {
+    int getScore() {
         return score;
     }
 

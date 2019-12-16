@@ -3,19 +3,25 @@ package Assignment2;
 import java.util.Objects;
 import static Assignment2.Team.*;
 
+/*
+ * PlayerScore's purpose is to contain an object of players name, score, and time spent
+ * This is the format in which files are stores, and objects are created from, and can also be stored in
+ * TreeSets given comparable overriding
+ */
 class PlayerScore implements Comparable<PlayerScore>{
-    private int score;
-    private String name;
-    private int time;
+    private int score; // score int
+    private String name; // name of player
+    private int time; // time in milliseconds spent making moves
 
-    PlayerScore(String entry)
+    // default constructor
+    PlayerScore(String[] entity)
     {
-        String[] entity= entry.split(" ");
         name = entity[0];
         score = Integer.parseInt(entity[1]);
         time = Integer.parseInt(entity[2]);
     }
 
+    // constructor taking p1 as argument, calculates their score and creates object for it
     public PlayerScore(Player p1)
     {
         name = p1.pName;
@@ -31,6 +37,7 @@ class PlayerScore implements Comparable<PlayerScore>{
         }catch(ArithmeticException e){score = (400000 / (20*10)) * winner;}
     }
 
+    // the remaining are set/get and override methods
     String getScore() {
         return String.valueOf(score);
     }
