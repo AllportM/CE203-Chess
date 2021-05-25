@@ -1,5 +1,14 @@
 # CE203-Chess
-Two player chess game featuring AI player  
+Two player chess game featuring AI player with MiniMax  
+  
+## Welcome screen including AI player, pieces shown are randomized  
+![Intro](images/intro.PNG)  
+  
+## Initial board, all pieces are drawn through shapes using composite design pattern  
+![board](images/board.PNG)  
+  
+## Moves available to queen, purple is move under mouse  
+![moves_avail](images/moves_avail.PNG)  
   
 This was my second assignment for CE203 - Application programming (Java module) in which we were tasked to develop a basic 2d shape based game such as pong, minesweeper etc; I chose to make Chess. The main tasks were to have a main user interface in which shapes could be moved, translated, or transformed, a Game Object / Shape superclass to be used to which sub classes implemented/realized abstract methods, interfaces to allow user input through keyboard and mouse, and the game keeping track of user scores whilst being able to display the top five scored of all time.  
   
